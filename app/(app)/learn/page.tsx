@@ -86,6 +86,16 @@ function LearnPage() {
     initSession();
   }, [initSession]);
 
+  // Use a persistent audio element for mobile compatibility
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
+
   async function playTts(text: string) {
     setPlayingTts(true);
     try {
@@ -97,14 +107,21 @@ function LearnPage() {
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        if (audioRef.current) audioRef.current.pause();
-        const audio = new Audio(url);
-        audioRef.current = audio;
+        const audio = audioRef.current!;
+        audio.pause();
         audio.onended = () => {
           setPlayingTts(false);
           URL.revokeObjectURL(url);
         };
-        audio.play();
+        audio.onerror = () => {
+          setPlayingTts(false);
+          URL.revokeObjectURL(url);
+        };
+        audio.src = url;
+        audio.load();
+        await audio.play().catch(() => setPlayingTts(false));
+      } else {
+        setPlayingTts(false);
       }
     } catch {
       setPlayingTts(false);
