@@ -12,6 +12,7 @@ import {
   type SessionSentence,
   type InputSentence,
 } from "@/lib/session-engine";
+import { getAudioUrl } from "@/lib/audio-cache";
 
 export default function LearnPageWrapper() {
   return (
@@ -96,33 +97,24 @@ function LearnPage() {
     };
   }, []);
 
+  // Prefetch audio while user reads Czech sentence
+  useEffect(() => {
+    if (current && !showAnswer) {
+      getAudioUrl(current.en).catch(() => {});
+    }
+  }, [current, showAnswer]);
+
   async function playTts(text: string) {
     setPlayingTts(true);
     try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = audioRef.current!;
-        audio.pause();
-        audio.onended = () => {
-          setPlayingTts(false);
-          URL.revokeObjectURL(url);
-        };
-        audio.onerror = () => {
-          setPlayingTts(false);
-          URL.revokeObjectURL(url);
-        };
-        audio.src = url;
-        audio.load();
-        await audio.play().catch(() => setPlayingTts(false));
-      } else {
-        setPlayingTts(false);
-      }
+      const url = await getAudioUrl(text);
+      const audio = audioRef.current!;
+      audio.pause();
+      audio.onended = () => setPlayingTts(false);
+      audio.onerror = () => setPlayingTts(false);
+      audio.src = url;
+      audio.load();
+      await audio.play().catch(() => setPlayingTts(false));
     } catch {
       setPlayingTts(false);
     }
