@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   const audioBuffer = await generateSpeech(text);
 
-  return new NextResponse(audioBuffer, {
+  return new NextResponse(new Uint8Array(audioBuffer), {
     headers: {
       "Content-Type": "audio/mpeg",
       "Cache-Control": "public, max-age=86400",
