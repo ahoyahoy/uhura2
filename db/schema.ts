@@ -5,7 +5,14 @@ import {
   boolean,
   integer,
   uuid,
+  customType,
 } from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 // ─── Better Auth tables ───────────────────────────────────────────
 
@@ -95,4 +102,11 @@ export const sentenceProgress = pgTable("sentence_progress", {
   lastReviewedAt: timestamp("last_reviewed_at"),
   nextReviewAt: timestamp("next_review_at").defaultNow().notNull(),
   repetitions: integer("repetitions").default(0).notNull(),
+});
+
+export const ttsCache = pgTable("tts_cache", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  textHash: text("text_hash").notNull().unique(),
+  audio: bytea("audio").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
