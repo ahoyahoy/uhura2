@@ -22,6 +22,7 @@ export default async function TopicsPage() {
       id: topic.id,
       title: topic.title,
       description: topic.description,
+      level: topic.level,
       createdAt: topic.createdAt,
     })
     .from(topic)

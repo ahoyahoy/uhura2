@@ -16,6 +16,7 @@ type TopicWithCounts = {
   id: string;
   title: string;
   description: string;
+  level: string;
   totalSentences: number;
   dueSentences: number;
 };
@@ -74,7 +75,9 @@ export function TopicsList({ topics }: { topics: TopicWithCounts[] }) {
             }`}
             onClick={() => toggleSelect(t.id)}
           >
-            <span className="flex-1 font-medium truncate">{t.title}</span>
+            <span className="flex-1 font-medium truncate">
+              {t.title} <span className="text-xs text-muted-foreground font-normal">{t.level}</span>
+            </span>
             <Badge variant={t.dueSentences > 0 ? "default" : "secondary"}>
               {t.dueSentences}
             </Badge>

@@ -62,14 +62,16 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "system",
-        content: `You are a language learning assistant. Generate sentence pairs for practicing English.
+        content: `You are a language learning assistant. Generate sentence pairs for practicing English at CEFR level ${created.level}.
+
+IMPORTANT: All sentences MUST strictly match ${created.level} level:
+${created.level === "A1" ? "- Use only present simple, basic vocabulary (100-500 words), very short sentences (3-6 words)" : ""}${created.level === "A2" ? "- Use present simple/continuous, past simple, basic connectors, simple everyday vocabulary" : ""}${created.level === "B1" ? "- Use past tenses, present perfect, conditionals (first), relative clauses, moderate vocabulary" : ""}${created.level === "B2" ? "- Use all tenses, passive voice, reported speech, conditionals (second/third), idiomatic expressions" : ""}${created.level === "C1" ? "- Use complex structures, subjunctive, inversions, advanced idioms, nuanced vocabulary" : ""}${created.level === "C2" ? "- Use sophisticated language, rare idioms, literary expressions, subtle nuances, near-native complexity" : ""}
 
 Rules:
 - Generate 10 sentence pairs (Czech → English)
-- Target level: ${created.level} (CEFR)
 - Focus on ONE grammatical pattern or structure per batch
 - Create variations of the same pattern (change subject, verb, context — keep the structure)
-- Sentences should be natural, conversational English appropriate for ${created.level} level
+- Sentences should be natural, conversational English
 - Czech translations should be natural Czech (not word-for-word)
 
 Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
