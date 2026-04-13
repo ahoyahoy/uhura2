@@ -49,6 +49,8 @@ const GRADE_LABELS: Record<Grade, string> = {
 function LearnPage() {
   const searchParams = useSearchParams();
   const topicIds = searchParams.get("topics")?.split(",") ?? [];
+  const classId = searchParams.get("classId") ?? "";
+  const backUrl = classId ? `/classes/${classId}` : "/classes";
 
   const engineRef = useRef(new SessionEngine());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -165,7 +167,7 @@ function LearnPage() {
                 ? `You reviewed ${initialCount} sentences.`
                 : "No sentences due for review."}
             </p>
-            <Link href="/topics">
+            <Link href={backUrl}>
               <Button>Back to Topics</Button>
             </Link>
           </CardContent>
@@ -180,7 +182,7 @@ function LearnPage() {
     <div className="w-full max-w-2xl mx-auto p-6 pb-44 space-y-6">
       <div className="flex items-center justify-between">
         <Link
-          href="/topics"
+          href={backUrl}
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />

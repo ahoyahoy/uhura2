@@ -86,8 +86,8 @@ export default function ClassesPage() {
       <Card>
         <CardContent className="py-6 space-y-4">
           <p className="text-sm font-medium">New course</p>
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
+          <div className="space-y-3">
+            <div>
               <label className="text-xs text-muted-foreground mb-1 block">
                 I speak
               </label>
@@ -103,8 +103,7 @@ export default function ClassesPage() {
                 ))}
               </select>
             </div>
-            <span className="text-muted-foreground mt-5">→</span>
-            <div className="flex-1">
+            <div>
               <label className="text-xs text-muted-foreground mb-1 block">
                 I want to learn
               </label>

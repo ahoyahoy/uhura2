@@ -38,7 +38,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
   function startReview() {
     if (selected.size === 0) return;
     const ids = Array.from(selected).join(",");
-    router.push(`/learn?topics=${ids}`);
+    router.push(`/learn?topics=${ids}${classId ? `&classId=${classId}` : ""}`);
   }
 
   async function generateSentences(topicId: string) {
