@@ -8,11 +8,11 @@ export function SignOutButton() {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon"
+      className="h-8 w-8"
       onClick={() => signOut()}
     >
-      <LogOut className="h-4 w-4 mr-2" />
-      Odhlásit
+      <LogOut className="h-4 w-4" />
     </Button>
   );
 }

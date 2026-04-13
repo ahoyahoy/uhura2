@@ -1,0 +1,1 @@
+ALTER TABLE "topic" ADD COLUMN "level" text DEFAULT 'B1' NOT NULL;

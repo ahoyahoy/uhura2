@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { topic } from "@/db/schema";
+import { topic, sentence } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { openai } from "@/lib/openai";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -26,7 +27,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { title, description } = await req.json();
+  const { description, level } = await req.json();
+
+  // Generate title from description
+  const completion = await openai.chat.completions.create({
+    model: "gpt-5.4-mini",
+    temperature: 0.5,
+    max_completion_tokens: 30,
+    messages: [
+      {
+        role: "system",
+        content: "Generate a short topic title (2-4 words, English) from the user's description. Return only the title, nothing else.",
+      },
+      { role: "user", content: description },
+    ],
+  });
+  const title = completion.choices[0].message.content?.trim() ?? "Untitled";
 
   const [created] = await db
     .insert(topic)
@@ -34,8 +50,50 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       title,
       description,
+      level: level ?? "B1",
     })
     .returning();
+
+  // Generate initial sentences
+  const gen = await openai.chat.completions.create({
+    model: "gpt-5.4-mini",
+    temperature: 0.8,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are a language learning assistant. Generate sentence pairs for practicing English.
+
+Rules:
+- Generate 10 sentence pairs (Czech → English)
+- Target level: ${created.level} (CEFR)
+- Focus on ONE grammatical pattern or structure per batch
+- Create variations of the same pattern (change subject, verb, context — keep the structure)
+- Sentences should be natural, conversational English appropriate for ${created.level} level
+- Czech translations should be natural Czech (not word-for-word)
+
+Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
+      },
+      {
+        role: "user",
+        content: `Topic: ${title}\nDescription: ${description}\nLevel: ${created.level}\n\nGenerate sentence pairs.`,
+      },
+    ],
+  });
+
+  const content = gen.choices[0].message.content;
+  if (content) {
+    const parsed = JSON.parse(content) as {
+      sentences: { cz: string; en: string }[];
+    };
+    await db.insert(sentence).values(
+      parsed.sentences.map((s) => ({
+        topicId: created.id,
+        cz: s.cz,
+        en: s.en,
+      }))
+    );
+  }
 
   return NextResponse.json({ topic: created });
 }

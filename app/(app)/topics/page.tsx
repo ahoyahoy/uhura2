@@ -63,7 +63,7 @@ export default async function TopicsPage() {
   );
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Topics</h1>
         <div className="flex items-center gap-2">

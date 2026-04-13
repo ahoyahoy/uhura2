@@ -68,6 +68,7 @@ export const topic = pgTable("topic", {
     .references(() => user.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  level: text("level").default("B1").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

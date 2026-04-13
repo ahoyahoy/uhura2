@@ -146,7 +146,7 @@ function LearnPage() {
   // Session done
   if (!current) {
     return (
-      <div className="max-w-lg mx-auto p-6 space-y-6">
+      <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
         <Card>
           <CardContent className="py-12 text-center space-y-4">
             <Check className="h-12 w-12 mx-auto text-green-500" />
@@ -168,7 +168,7 @@ function LearnPage() {
   const completed = initialCount - remaining;
 
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-6">
+    <div className="w-full max-w-2xl mx-auto p-6 pb-44 space-y-6">
       <div className="flex items-center justify-between">
         <Link
           href="/topics"
@@ -185,79 +185,27 @@ function LearnPage() {
         </div>
       </div>
 
+      <p className="text-xs text-muted-foreground text-center">{current.topicTitle}</p>
+
       <Card>
         <CardContent className="py-8 space-y-6">
-          {/* Topic badge */}
-          <div className="text-center">
-            <Badge variant="outline" className="text-xs">
-              {current.topicTitle}
-            </Badge>
-          </div>
-
-          {/* Czech sentence */}
-          <div className="text-center space-y-2">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              Czech
-            </p>
-            <p className="text-xl font-medium">{current.cz}</p>
-          </div>
-
-          {/* Show answer / English sentence */}
           {!showAnswer ? (
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                onClick={() => {
-                  setShowAnswer(true);
-                  playTts(current.en);
-                }}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Show Answer
-              </Button>
-            </div>
+            <>
+              {/* Czech sentence */}
+              <div className="text-center space-y-2">
+                <p className="text-xl font-medium">{current.cz}</p>
+              </div>
+            </>
           ) : (
             <>
+              {/* English sentence (main) */}
               <div className="text-center space-y-2">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  English
-                </p>
-                <p className="text-xl font-medium text-primary">
-                  {current.en}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => playTts(current.en)}
-                  disabled={playingTts}
-                >
-                  <Volume2 className="h-4 w-4 mr-1" />
-                  {playingTts ? "Playing..." : "Listen"}
-                </Button>
+                <p className="text-xl font-medium">{current.en}</p>
               </div>
-
-              {/* Rating buttons */}
-              <div className="space-y-2">
-                <p className="text-xs text-center text-muted-foreground">
-                  How did you do?
-                </p>
-                <div className="flex gap-2 justify-center">
-                  {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
-                    <Button
-                      key={grade}
-                      className={`${GRADE_COLORS[grade]} text-white font-bold min-w-[52px]`}
-                      onClick={() => rateSentence(grade)}
-                    >
-                      <span className="flex flex-col items-center">
-                        <span className="text-base">{grade}</span>
-                        <span className="text-[10px] font-normal opacity-80">
-                          {GRADE_LABELS[grade]}
-                        </span>
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
+              {/* Czech sentence (small) */}
+              <p className="text-center text-sm text-muted-foreground">
+                {current.cz}
+              </p>
             </>
           )}
 
@@ -269,6 +217,53 @@ function LearnPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Fixed bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-background border-t">
+        <div className="w-full max-w-2xl mx-auto space-y-2">
+          {!showAnswer ? (
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => {
+                setShowAnswer(true);
+                playTts(current.en);
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Show Answer
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => playTts(current.en)}
+                disabled={playingTts}
+              >
+                <Volume2 className="h-4 w-4 mr-2" />
+                {playingTts ? "Playing..." : "Listen"}
+              </Button>
+              <div className="grid grid-cols-5 gap-2">
+                {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
+                  <Button
+                    key={grade}
+                    className={`${GRADE_COLORS[grade]} text-white font-bold h-14 w-full`}
+                    onClick={() => rateSentence(grade)}
+                  >
+                    <span className="flex flex-col items-center">
+                      <span className="text-lg">{grade}</span>
+                      <span className="text-[10px] font-normal opacity-80">
+                        {GRADE_LABELS[grade]}
+                      </span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

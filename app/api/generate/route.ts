@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       : "";
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-5.4-mini",
     temperature: 0.8,
     response_format: { type: "json_object" },
     messages: [
@@ -41,9 +41,10 @@ export async function POST(req: NextRequest) {
 
 Rules:
 - Generate 10 sentence pairs (Czech → English)
+- Target level: ${t.level} (CEFR)
 - Focus on ONE grammatical pattern or structure per batch
 - Create variations of the same pattern (change subject, verb, context — keep the structure)
-- Sentences should be natural, conversational English
+- Sentences should be natural, conversational English appropriate for ${t.level} level
 - Czech translations should be natural Czech (not word-for-word)
 - Vary difficulty slightly within the batch
 - If existing sentences are provided, generate DIFFERENT patterns/variations — do not repeat
@@ -52,7 +53,7 @@ Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
       },
       {
         role: "user",
-        content: `Topic: ${t.title}\nDescription: ${t.description}${existingContext}\n\nGenerate new sentence pairs.`,
+        content: `Topic: ${t.title}\nDescription: ${t.description}\nLevel: ${t.level}${existingContext}\n\nGenerate new sentence pairs.`,
       },
     ],
   });
