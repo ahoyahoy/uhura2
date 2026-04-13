@@ -3,8 +3,10 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { openai } from "@/lib/openai";
 import { db } from "@/db";
-import { sentence, topic } from "@/db/schema";
+import { sentence, topic, languageClass } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getLanguageLabel } from "@/lib/languages";
+import { getLevelDescription } from "@/lib/level-descriptions";
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -19,16 +21,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Topic not found" }, { status: 404 });
   }
 
+  // Get class languages
+  let sourceLang = "Czech";
+  let targetLang = "English";
+  if (t.classId) {
+    const [cls] = await db
+      .select()
+      .from(languageClass)
+      .where(eq(languageClass.id, t.classId));
+    if (cls) {
+      sourceLang = getLanguageLabel(cls.sourceLanguage);
+      targetLang = getLanguageLabel(cls.targetLanguage);
+    }
+  }
+
   // Load existing sentences for context
   const existing = await db
-    .select({ cz: sentence.cz, en: sentence.en })
+    .select({ source: sentence.sourceText, target: sentence.targetText })
     .from(sentence)
     .where(eq(sentence.topicId, topicId));
 
   const existingContext =
     existing.length > 0
-      ? `\n\nExisting sentences (DO NOT repeat these, generate NEW ones with different patterns/variations):\n${existing.map((s) => `- ${s.cz} → ${s.en}`).join("\n")}`
+      ? `\n\nExisting sentences (DO NOT repeat these, generate NEW ones with different patterns/variations):\n${existing.map((s) => `- ${s.source} → ${s.target}`).join("\n")}`
       : "";
+
+  const levelDesc = getLevelDescription(t.level);
 
   const completion = await openai.chat.completions.create({
     model: "gpt-5.4-mini",
@@ -37,20 +55,20 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "system",
-        content: `You are a language learning assistant. Generate sentence pairs for practicing English at CEFR level ${t.level}.
+        content: `You are a language learning assistant. Generate sentence pairs for practicing ${targetLang} at CEFR level ${t.level}.
 
 IMPORTANT: All sentences MUST strictly match ${t.level} level:
-${t.level === "A1" ? "- Use only present simple, basic vocabulary (100-500 words), very short sentences (3-6 words)" : ""}${t.level === "A2" ? "- Use present simple/continuous, past simple, basic connectors, simple everyday vocabulary" : ""}${t.level === "B1" ? "- Use past tenses, present perfect, conditionals (first), relative clauses, moderate vocabulary" : ""}${t.level === "B2" ? "- Use all tenses, passive voice, reported speech, conditionals (second/third), idiomatic expressions" : ""}${t.level === "C1" ? "- Use complex structures, subjunctive, inversions, advanced idioms, nuanced vocabulary" : ""}${t.level === "C2" ? "- Use sophisticated language, rare idioms, literary expressions, subtle nuances, near-native complexity" : ""}
+${levelDesc}
 
 Rules:
-- Generate 10 sentence pairs (Czech → English)
+- Generate 10 sentence pairs (${sourceLang} → ${targetLang})
 - Focus on ONE grammatical pattern or structure per batch
 - Create variations of the same pattern (change subject, verb, context — keep the structure)
-- Sentences should be natural, conversational English
-- Czech translations should be natural Czech (not word-for-word)
+- Sentences should be natural, conversational ${targetLang}
+- ${sourceLang} translations should be natural ${sourceLang} (not word-for-word)
 - If existing sentences are provided, generate DIFFERENT patterns/variations — do not repeat
 
-Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
+Return JSON: { "sentences": [{ "source": "...", "target": "..." }] }`,
       },
       {
         role: "user",
@@ -61,14 +79,11 @@ Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
 
   const content = completion.choices[0].message.content;
   if (!content) {
-    return NextResponse.json(
-      { error: "No response from AI" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "No response from AI" }, { status: 500 });
   }
 
   const parsed = JSON.parse(content) as {
-    sentences: { cz: string; en: string }[];
+    sentences: { source: string; target: string }[];
   };
 
   const inserted = await db
@@ -76,8 +91,8 @@ Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
     .values(
       parsed.sentences.map((s) => ({
         topicId,
-        cz: s.cz,
-        en: s.en,
+        sourceText: s.source,
+        targetText: s.target,
       }))
     )
     .returning();

@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
   const rows = await db
     .select({
       id: sentence.id,
-      cz: sentence.cz,
-      en: sentence.en,
+      sourceText: sentence.sourceText,
+      targetText: sentence.targetText,
       topicTitle: topic.title,
       level: sentenceProgress.level,
       lastGrade: sentenceProgress.lastGrade,
@@ -46,11 +46,10 @@ export async function GET(req: NextRequest) {
       )
     );
 
-  // Weighted shuffle - prioritizuje věty, které jsi déle neviděl a jsou těžší
   const mapped = rows.map((r) => ({
     id: r.id,
-    cz: r.cz,
-    en: r.en,
+    sourceText: r.sourceText,
+    targetText: r.targetText,
     topicTitle: r.topicTitle,
     lastReviewedAt: r.nextReviewAt,
     level: r.level,

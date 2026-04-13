@@ -68,8 +68,20 @@ export const verification = pgTable("verification", {
 
 // ─── App tables ───────────────────────────────────────────────────
 
+export const languageClass = pgTable("language_class", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  sourceLanguage: text("source_language").notNull(),
+  targetLanguage: text("target_language").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const topic = pgTable("topic", {
   id: uuid("id").defaultRandom().primaryKey(),
+  classId: uuid("class_id")
+    .references(() => languageClass.id, { onDelete: "cascade" }),
   userId: text("user_id")
     .notNull()
     .references(() => user.id),
@@ -84,8 +96,8 @@ export const sentence = pgTable("sentence", {
   topicId: uuid("topic_id")
     .notNull()
     .references(() => topic.id, { onDelete: "cascade" }),
-  cz: text("cz").notNull(),
-  en: text("en").notNull(),
+  sourceText: text("source_text").notNull(),
+  targetText: text("target_text").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

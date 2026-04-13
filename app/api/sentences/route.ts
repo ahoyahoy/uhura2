@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
   const rows = await db
     .select({
       id: sentence.id,
-      cz: sentence.cz,
-      en: sentence.en,
+      sourceText: sentence.sourceText,
+      targetText: sentence.targetText,
       createdAt: sentence.createdAt,
       level: sentenceProgress.level,
       lastGrade: sentenceProgress.lastGrade,
@@ -44,26 +44,12 @@ export async function GET(req: NextRequest) {
 
   const sentences = rows.map((r) => ({
     id: r.id,
-    cz: r.cz,
-    en: r.en,
+    sourceText: r.sourceText,
+    targetText: r.targetText,
     progress: r.level !== null
-      ? {
-          level: r.level,
-          lastGrade: r.lastGrade,
-          nextReviewAt: r.nextReviewAt,
-        }
+      ? { level: r.level, lastGrade: r.lastGrade, nextReviewAt: r.nextReviewAt }
       : null,
   }));
-
-  // Sort: due for review first, then new (no progress), then future
-  const now = new Date();
-  sentences.sort((a, b) => {
-    const aDue = !a.progress || new Date(a.progress.nextReviewAt!) <= now;
-    const bDue = !b.progress || new Date(b.progress.nextReviewAt!) <= now;
-    if (aDue && !bDue) return -1;
-    if (!aDue && bDue) return 1;
-    return 0;
-  });
 
   return NextResponse.json({ sentences, topicTitle: t.title });
 }

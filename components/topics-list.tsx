@@ -21,7 +21,7 @@ type TopicWithCounts = {
   dueSentences: number;
 };
 
-export function TopicsList({ topics }: { topics: TopicWithCounts[] }) {
+export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; classId?: string }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState<string | null>(null);

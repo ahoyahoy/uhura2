@@ -100,7 +100,7 @@ function LearnPage() {
   // Prefetch audio while user reads Czech sentence
   useEffect(() => {
     if (current && !showAnswer) {
-      getAudioUrl(current.en).catch(() => {});
+      getAudioUrl(current.targetText).catch(() => {});
     }
   }, [current, showAnswer]);
 
@@ -202,18 +202,18 @@ function LearnPage() {
             <>
               {/* Czech sentence */}
               <div className="text-center space-y-2">
-                <p className="text-xl font-medium">{current.cz}</p>
+                <p className="text-xl font-medium">{current.sourceText}</p>
               </div>
             </>
           ) : (
             <>
               {/* English sentence (main) */}
               <div className="text-center space-y-2">
-                <p className="text-xl font-medium">{current.en}</p>
+                <p className="text-xl font-medium">{current.targetText}</p>
               </div>
               {/* Czech sentence (small) */}
               <p className="text-center text-sm text-muted-foreground">
-                {current.cz}
+                {current.sourceText}
               </p>
             </>
           )}
@@ -235,7 +235,7 @@ function LearnPage() {
               className="w-full h-14"
               onClick={() => {
                 setShowAnswer(true);
-                playTts(current.en);
+                playTts(current.targetText);
               }}
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -246,7 +246,7 @@ function LearnPage() {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => playTts(current.en)}
+                onClick={() => playTts(current.targetText)}
                 disabled={playingTts}
               >
                 <Volume2 className="h-4 w-4 mr-2" />

@@ -11,8 +11,8 @@ const TTL_SETTINGS = {
 
 export type SessionSentence = {
   id: string;
-  cz: string;
-  en: string;
+  sourceText: string;
+  targetText: string;
   topicTitle: string;
   level: number;
   // session-only state
@@ -24,8 +24,8 @@ export type SessionSentence = {
 
 export type InputSentence = {
   id: string;
-  cz: string;
-  en: string;
+  sourceText: string;
+  targetText: string;
   topicTitle: string;
   progress: { level: number; lastGrade: string | null } | null;
 };
@@ -63,8 +63,8 @@ export class SessionEngine {
     for (const s of sentences) {
       this.pool.set(s.id, {
         id: s.id,
-        cz: s.cz,
-        en: s.en,
+        sourceText: s.sourceText,
+        targetText: s.targetText,
         topicTitle: s.topicTitle,
         level: s.progress?.level ?? 0,
         ratingHistory: [],

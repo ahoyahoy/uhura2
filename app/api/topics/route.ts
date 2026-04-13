@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { topic, sentence } from "@/db/schema";
+import { topic, sentence, languageClass } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { openai } from "@/lib/openai";
+import { getLanguageLabel } from "@/lib/languages";
+import { getLevelDescription } from "@/lib/level-descriptions";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -27,7 +29,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { description, level } = await req.json();
+  const { description, level, classId } = await req.json();
+
+  // Get class languages
+  let sourceLang = "Czech";
+  let targetLang = "English";
+  if (classId) {
+    const [cls] = await db
+      .select()
+      .from(languageClass)
+      .where(eq(languageClass.id, classId));
+    if (cls) {
+      sourceLang = getLanguageLabel(cls.sourceLanguage);
+      targetLang = getLanguageLabel(cls.targetLanguage);
+    }
+  }
 
   // Generate title from description
   const completion = await openai.chat.completions.create({
@@ -48,11 +64,14 @@ export async function POST(req: NextRequest) {
     .insert(topic)
     .values({
       userId: session.user.id,
+      classId: classId ?? null,
       title,
       description,
       level: level ?? "B1",
     })
     .returning();
+
+  const levelDesc = getLevelDescription(created.level);
 
   // Generate initial sentences
   const gen = await openai.chat.completions.create({
@@ -62,19 +81,19 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "system",
-        content: `You are a language learning assistant. Generate sentence pairs for practicing English at CEFR level ${created.level}.
+        content: `You are a language learning assistant. Generate sentence pairs for practicing ${targetLang} at CEFR level ${created.level}.
 
 IMPORTANT: All sentences MUST strictly match ${created.level} level:
-${created.level === "A1" ? "- Use only present simple, basic vocabulary (100-500 words), very short sentences (3-6 words)" : ""}${created.level === "A2" ? "- Use present simple/continuous, past simple, basic connectors, simple everyday vocabulary" : ""}${created.level === "B1" ? "- Use past tenses, present perfect, conditionals (first), relative clauses, moderate vocabulary" : ""}${created.level === "B2" ? "- Use all tenses, passive voice, reported speech, conditionals (second/third), idiomatic expressions" : ""}${created.level === "C1" ? "- Use complex structures, subjunctive, inversions, advanced idioms, nuanced vocabulary" : ""}${created.level === "C2" ? "- Use sophisticated language, rare idioms, literary expressions, subtle nuances, near-native complexity" : ""}
+${levelDesc}
 
 Rules:
-- Generate 10 sentence pairs (Czech → English)
+- Generate 10 sentence pairs (${sourceLang} → ${targetLang})
 - Focus on ONE grammatical pattern or structure per batch
 - Create variations of the same pattern (change subject, verb, context — keep the structure)
-- Sentences should be natural, conversational English
-- Czech translations should be natural Czech (not word-for-word)
+- Sentences should be natural, conversational ${targetLang}
+- ${sourceLang} translations should be natural ${sourceLang} (not word-for-word)
 
-Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
+Return JSON: { "sentences": [{ "source": "...", "target": "..." }] }`,
       },
       {
         role: "user",
@@ -86,13 +105,13 @@ Return JSON: { "sentences": [{ "cz": "...", "en": "..." }] }`,
   const content = gen.choices[0].message.content;
   if (content) {
     const parsed = JSON.parse(content) as {
-      sentences: { cz: string; en: string }[];
+      sentences: { source: string; target: string }[];
     };
     await db.insert(sentence).values(
       parsed.sentences.map((s) => ({
         topicId: created.id,
-        cz: s.cz,
-        en: s.en,
+        sourceText: s.source,
+        targetText: s.target,
       }))
     );
   }

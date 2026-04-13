@@ -28,7 +28,7 @@ export async function DELETE(
 
   // Get all sentences for this topic
   const topicSentences = await db
-    .select({ id: sentence.id, en: sentence.en })
+    .select({ id: sentence.id, targetText: sentence.targetText })
     .from(sentence)
     .where(eq(sentence.topicId, id));
 
@@ -42,7 +42,7 @@ export async function DELETE(
 
     // Delete cached audio
     const hashes = topicSentences.map((s) =>
-      createHash("md5").update(s.en).digest("hex")
+      createHash("md5").update(s.targetText).digest("hex")
     );
     await db.delete(ttsCache).where(inArray(ttsCache.textHash, hashes));
   }
