@@ -103,18 +103,22 @@ Return JSON: { "sentences": [{ "source": "...", "target": "..." }] }`,
   });
 
   const content = gen.choices[0].message.content;
+  let insertedSentences: { id: string; topicId: string; sourceText: string; targetText: string; createdAt: Date }[] = [];
   if (content) {
     const parsed = JSON.parse(content) as {
       sentences: { source: string; target: string }[];
     };
-    await db.insert(sentence).values(
-      parsed.sentences.map((s) => ({
-        topicId: created.id,
-        sourceText: s.source,
-        targetText: s.target,
-      }))
-    );
+    insertedSentences = await db
+      .insert(sentence)
+      .values(
+        parsed.sentences.map((s) => ({
+          topicId: created.id,
+          sourceText: s.source,
+          targetText: s.target,
+        }))
+      )
+      .returning();
   }
 
-  return NextResponse.json({ topic: created });
+  return NextResponse.json({ topic: created, sentences: insertedSentences });
 }

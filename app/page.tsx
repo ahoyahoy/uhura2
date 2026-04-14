@@ -2,12 +2,14 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignInButton } from "@/components/sign-in-button";
+import { LastCourseRedirect } from "@/components/last-course-redirect";
 
 export default async function Home() {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (session) {
-    redirect("/classes");
+    // Client component handles localStorage redirect
+    return <LastCourseRedirect />;
   }
 
   return (

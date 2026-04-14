@@ -89,6 +89,7 @@ export const topic = pgTable("topic", {
   description: text("description").notNull(),
   level: text("level").default("B1").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const sentence = pgTable("sentence", {

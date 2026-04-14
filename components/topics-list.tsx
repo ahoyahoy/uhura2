@@ -10,7 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Play, RefreshCw, Trash2, MoreVertical, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, RefreshCw, Trash2, MoreVertical, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { FloatingBar } from "@/components/floating-bar";
+import { ActionButton } from "@/components/action-button";
+import { useDeleteTopic, useGenerateSentences } from "@/lib/hooks/use-mutations";
 
 type TopicWithCounts = {
   id: string;
@@ -24,7 +28,8 @@ type TopicWithCounts = {
 export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; classId?: string }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [generating, setGenerating] = useState<string | null>(null);
+  const deleteMutation = useDeleteTopic();
+  const generateMutation = useGenerateSentences();
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -41,21 +46,18 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
     router.push(`/learn?topics=${ids}${classId ? `&classId=${classId}` : ""}`);
   }
 
-  async function generateSentences(topicId: string) {
-    setGenerating(topicId);
-    await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topicId }),
-    });
-    setGenerating(null);
-    router.refresh();
+  function generateSentences(topicId: string) {
+    generateMutation.mutate(topicId);
   }
 
-  async function deleteTopic(topicId: string) {
+  function deleteTopic(topicId: string) {
     if (!confirm("Delete this topic and all its sentences?")) return;
-    await fetch(`/api/topics/${topicId}`, { method: "DELETE" });
-    router.refresh();
+    deleteMutation.mutate(topicId);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(topicId);
+      return next;
+    });
   }
 
   const totalDue = topics
@@ -64,24 +66,24 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="-mx-6">
         {topics.map((t) => (
           <div
             key={t.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+            className={`flex items-center gap-3 px-8 py-3 cursor-pointer transition-colors ${
               selected.has(t.id)
-                ? "ring-2 ring-primary bg-accent"
-                : "hover:bg-accent/50"
+                ? "bg-primary/10"
+                : "hover:bg-primary/5"
             }`}
             onClick={() => toggleSelect(t.id)}
           >
-            <span className="flex-1 font-medium truncate">
+            <span className="flex-1 truncate">
               {t.title} <span className="text-xs text-muted-foreground font-normal">{t.level}</span>
             </span>
             <Badge variant={t.dueSentences > 0 ? "default" : "secondary"}>
               {t.dueSentences}
             </Badge>
-            {generating === t.id ? (
+            {generateMutation.isPending && generateMutation.variables === t.id ? (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             ) : (
               <DropdownMenu>
@@ -118,21 +120,23 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
         ))}
       </div>
 
-      {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
-          <div className="max-w-2xl mx-auto">
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={startReview}
-              disabled={totalDue === 0}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Start practicing ({totalDue} sentences)
-            </Button>
-          </div>
-        </div>
-      )}
+      <FloatingBar>
+        {selected.size > 0 ? (
+          <ActionButton
+            onClick={startReview}
+            disabled={totalDue === 0}
+            icon={<ArrowRight className="h-5 w-5" />}
+          >
+            Start practicing{"\u2003"}<span className="font-light">{totalDue}</span>
+          </ActionButton>
+        ) : (
+          <Link href={`/classes/${classId}/new`}>
+            <ActionButton variant="soft" icon={<ArrowUpRight className="h-5 w-5" />}>
+              Create new topic
+            </ActionButton>
+          </Link>
+        )}
+      </FloatingBar>
     </>
   );
 }

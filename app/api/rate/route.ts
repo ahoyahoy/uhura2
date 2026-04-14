@@ -38,7 +38,9 @@ export async function POST(req: NextRequest) {
   const currentLevel = existing?.level ?? 0;
   const reps = existing?.repetitions ?? 0;
   const newLevel = getNextLevel(currentLevel, grade);
-  const nextReviewAt = getNextReviewDate(newLevel, reps + 1);
+  const now = new Date();
+  const newReps = reps + 1;
+  const nextReviewAt = getNextReviewDate(newLevel, newReps);
 
   if (existing) {
     await db
@@ -46,9 +48,9 @@ export async function POST(req: NextRequest) {
       .set({
         level: newLevel,
         lastGrade: String(grade),
-        lastReviewedAt: new Date(),
+        lastReviewedAt: now,
         nextReviewAt,
-        repetitions: existing.repetitions + 1,
+        repetitions: newReps,
       })
       .where(eq(sentenceProgress.id, existing.id));
   } else {
@@ -57,11 +59,18 @@ export async function POST(req: NextRequest) {
       userId: session.user.id,
       level: newLevel,
       lastGrade: String(grade),
-      lastReviewedAt: new Date(),
+      lastReviewedAt: now,
       nextReviewAt,
       repetitions: 1,
     });
   }
 
-  return NextResponse.json({ level: newLevel, nextReviewAt });
+  return NextResponse.json({
+    sentenceId,
+    level: newLevel,
+    lastGrade: String(grade),
+    lastReviewedAt: now.toISOString(),
+    nextReviewAt: nextReviewAt.toISOString(),
+    repetitions: newReps,
+  });
 }

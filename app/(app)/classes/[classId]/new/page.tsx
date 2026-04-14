@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Loader2, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import { useCreateTopic } from "@/lib/hooks/use-mutations";
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
@@ -37,24 +38,16 @@ export default function NewTopicPage() {
   const { classId } = useParams<{ classId: string }>();
   const [description, setDescription] = useState("");
   const [level, setLevel] = useState("B1");
-  const [loading, setLoading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+
+  const createTopic = useCreateTopic();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-
-    const res = await fetch("/api/topics", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description, level, classId }),
-    });
-
-    if (res.ok) {
-      router.replace(`/classes/${classId}`);
-      router.refresh();
-    }
-    setLoading(false);
+    createTopic.mutate(
+      { description, level, classId },
+      { onSuccess: () => router.replace(`/classes/${classId}`) }
+    );
   }
 
   return (
@@ -122,9 +115,9 @@ export default function NewTopicPage() {
                 ))}
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading || !description.trim()}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {loading ? "Generating sentences..." : "Create & Generate Sentences"}
+            <Button type="submit" className="w-full" disabled={createTopic.isPending || !description.trim()}>
+              {createTopic.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {createTopic.isPending ? "Generating sentences..." : "Create & Generate Sentences"}
             </Button>
           </form>
         </CardContent>

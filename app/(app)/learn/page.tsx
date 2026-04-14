@@ -5,14 +5,19 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Volume2, Eye, Loader2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Volume2, Eye, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 import {
   SessionEngine,
   type SessionSentence,
-  type InputSentence,
 } from "@/lib/session-engine";
 import { getAudioUrl } from "@/lib/audio-cache";
+import NumberFlow from "@number-flow/react";
+import { FloatingBar } from "@/components/floating-bar";
+import { useScreenBg } from "@/lib/hooks/use-screen-bg";
+import { ActionButton } from "@/components/action-button";
+import { useSentencesDue } from "@/lib/hooks/use-sentences-due";
+import { useRateSentence } from "@/lib/hooks/use-mutations";
 
 export default function LearnPageWrapper() {
   return (
@@ -40,13 +45,15 @@ const GRADE_COLORS: Record<Grade, string> = {
 
 const GRADE_LABELS: Record<Grade, string> = {
   1: "Perfect",
-  2: "Good",
+  2: "Slow",
   3: "So-so",
   4: "Bad",
   5: "No idea",
 };
 
 function LearnPage() {
+  useScreenBg("tinted");
+
   const searchParams = useSearchParams();
   const topicIds = searchParams.get("topics")?.split(",") ?? [];
   const classId = searchParams.get("classId") ?? "";
@@ -54,6 +61,7 @@ function LearnPage() {
 
   const engineRef = useRef(new SessionEngine());
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const initializedRef = useRef(false);
 
   const [current, setCurrent] = useState<SessionSentence | null>(null);
   const [remaining, setRemaining] = useState(0);
@@ -62,32 +70,21 @@ function LearnPage() {
   const [loading, setLoading] = useState(true);
   const [playingTts, setPlayingTts] = useState(false);
 
-  const topicKey = topicIds.join(",");
+  const { sentences: dueSentences, isLoading: syncLoading } = useSentencesDue(topicIds);
+  const rateMutation = useRateSentence();
 
-  const initSession = useCallback(async () => {
-    if (topicIds.length === 0) {
-      setLoading(false);
-      return;
-    }
-    const res = await fetch(
-      `/api/sentences/due?topics=${topicKey}&t=${Date.now()}`,
-      { cache: "no-store" }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const sentences: InputSentence[] = data.sentences;
-      const engine = engineRef.current;
-      engine.init(sentences);
-      setInitialCount(engine.initialCount);
-      setRemaining(engine.remaining);
-      setCurrent(engine.getNext());
-    }
-    setLoading(false);
-  }, [topicKey]);
-
+  // Initialize session when due sentences arrive
   useEffect(() => {
-    initSession();
-  }, [initSession]);
+    if (syncLoading || initializedRef.current) return;
+    initializedRef.current = true;
+
+    const engine = engineRef.current;
+    engine.init(dueSentences);
+    setInitialCount(engine.initialCount);
+    setRemaining(engine.remaining);
+    setCurrent(engine.getNext());
+    setLoading(false);
+  }, [syncLoading, dueSentences]);
 
   // Use a persistent audio element for mobile compatibility
   useEffect(() => {
@@ -122,20 +119,16 @@ function LearnPage() {
     }
   }
 
-  async function rateSentence(grade: Grade) {
+  function rateSentence(grade: Grade) {
     if (!current) return;
     const engine = engineRef.current;
 
     // Evaluate locally (manages pool)
     const wasPass = engine.evaluate(current.id, grade);
 
-    // Save to DB (pass = schedule future, fail = record rating)
+    // Save to DB only on pass (same behavior as before)
     if (wasPass) {
-      fetch("/api/rate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sentenceId: current.id, grade }),
-      });
+      rateMutation.mutate({ sentenceId: current.id, grade });
     }
 
     setShowAnswer(false);
@@ -183,97 +176,80 @@ function LearnPage() {
       <div className="flex items-center justify-between">
         <Link
           href={backUrl}
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Topics
+          <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div className="flex items-center gap-3">
-          <Badge variant="secondary">
-            {completed} / {initialCount} done
-          </Badge>
-          <Badge variant="outline">{remaining} left</Badge>
-        </div>
+        <p className="text-xs text-muted-foreground">{current.topicTitle}</p>
       </div>
 
-      <p className="text-xs text-muted-foreground text-center">{current.topicTitle}</p>
+      <div className="py-8 px-6 space-y-10 bg-white rounded-xl min-h-64">
+        {!showAnswer ? (
+          <p className="text-xl">{current.sourceText}</p>
+        ) : (
+          <>
+            <p className="text-xl">{current.targetText}</p>
+            <p className="text-sm text-muted-foreground">
+              {current.sourceText}
+            </p>
+          </>
+        )}
+      </div>
 
-      <Card>
-        <CardContent className="py-8 space-y-6">
+      {current.repeatCount > 0 && (
+        <p className="text-xs text-muted-foreground text-center -mt-4">
+          {current.repeatCount}×
+        </p>
+      )}
+
+      <FloatingBar>
+        <div className="h-[6rem] flex flex-col justify-end space-y-2 overflow-hidden">
           {!showAnswer ? (
-            <>
-              {/* Czech sentence */}
-              <div className="text-center space-y-2">
-                <p className="text-xl font-medium">{current.sourceText}</p>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* English sentence (main) */}
-              <div className="text-center space-y-2">
-                <p className="text-xl font-medium">{current.targetText}</p>
-              </div>
-              {/* Czech sentence (small) */}
-              <p className="text-center text-sm text-muted-foreground">
-                {current.sourceText}
-              </p>
-            </>
-          )}
-
-          {/* Session info */}
-          {current.repeatCount > 0 && (
-            <div className="text-center text-xs text-muted-foreground">
-              Repeated {current.repeatCount}x in this session
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-background border-t">
-        <div className="w-full max-w-2xl mx-auto space-y-2">
-          {!showAnswer ? (
-            <Button
-              className="w-full h-14"
+            <ActionButton
+              variant="soft"
               onClick={() => {
                 setShowAnswer(true);
                 playTts(current.targetText);
               }}
+              icon={<ArrowRight className="h-5 w-5" />}
             >
-              <Eye className="h-4 w-4 mr-2" />
-              Show Answer
-            </Button>
+              Answer
+            </ActionButton>
           ) : (
             <>
-              <Button
-                variant="outline"
-                className="w-full"
+              <button
+                className="w-full h-8 shrink-0 flex items-center justify-center gap-2 text-sm text-foreground/50 bg-primary/10 rounded-lg border-0 cursor-pointer hover:bg-primary/15 transition-colors"
                 onClick={() => playTts(current.targetText)}
                 disabled={playingTts}
               >
-                <Volume2 className="h-4 w-4 mr-2" />
+                <Volume2 className="h-4 w-4" />
                 {playingTts ? "Playing..." : "Listen"}
-              </Button>
-              <div className="grid grid-cols-5 gap-2">
+              </button>
+              <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14 shrink-0">
                 {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
-                  <Button
+                  <button
                     key={grade}
-                    className={`${GRADE_COLORS[grade]} text-white font-bold h-14 w-full`}
+                    className="h-14 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                     onClick={() => rateSentence(grade)}
                   >
-                    <span className="flex flex-col items-center">
-                      <span className="text-lg">{grade}</span>
-                      <span className="text-[10px] font-normal opacity-80">
+                    <span className="flex flex-col items-center leading-none">
+                      <span className="text-lg font-bold">{grade}</span>
+                      <span className="text-[10px] font-normal opacity-70">
                         {GRADE_LABELS[grade]}
                       </span>
                     </span>
-                  </Button>
+                  </button>
                 ))}
               </div>
             </>
           )}
         </div>
-      </div>
+        <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-1">
+          <span><NumberFlow value={completed} /> done</span>
+          <span>·</span>
+          <span><NumberFlow value={remaining} /> left</span>
+        </div>
+      </FloatingBar>
     </div>
   );
 }

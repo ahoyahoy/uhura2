@@ -47,8 +47,14 @@ export async function DELETE(
     await db.delete(ttsCache).where(inArray(ttsCache.textHash, hashes));
   }
 
-  // Delete topic (sentences cascade-delete)
-  await db.delete(topic).where(eq(topic.id, id));
+  // Hard delete sentences (progress already deleted above)
+  await db.delete(sentence).where(eq(sentence.topicId, id));
+
+  // Soft delete topic
+  await db
+    .update(topic)
+    .set({ deletedAt: new Date() })
+    .where(eq(topic.id, id));
 
   return NextResponse.json({ ok: true });
 }
