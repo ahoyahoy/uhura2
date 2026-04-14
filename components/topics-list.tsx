@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ArrowRight, ArrowUpRight, RefreshCw, Trash2, MoreVertical, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
@@ -46,18 +38,18 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
     router.push(`/learn?topics=${ids}${classId ? `&classId=${classId}` : ""}`);
   }
 
-  function generateSentences(topicId: string) {
-    generateMutation.mutate(topicId);
+  function generateForSelected() {
+    for (const id of selected) {
+      generateMutation.mutate(id);
+    }
   }
 
-  function deleteTopic(topicId: string) {
-    if (!confirm("Delete this topic and all its sentences?")) return;
-    deleteMutation.mutate(topicId);
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.delete(topicId);
-      return next;
-    });
+  function deleteSelected() {
+    if (!confirm(`Delete ${selected.size} topic${selected.size > 1 ? "s" : ""} and all sentences?`)) return;
+    for (const id of selected) {
+      deleteMutation.mutate(id);
+    }
+    setSelected(new Set());
   }
 
   const totalDue = topics
@@ -72,7 +64,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             key={t.id}
             className={`flex items-center gap-3 px-8 py-3 cursor-pointer transition-colors ${
               selected.has(t.id)
-                ? "bg-primary/10"
+                ? "bg-primary/10 text-primary"
                 : "hover:bg-primary/5"
             }`}
             onClick={() => toggleSelect(t.id)}
@@ -80,41 +72,9 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             <span className="flex-1 truncate">
               {t.title} <span className="text-xs text-muted-foreground font-normal">{t.level}</span>
             </span>
-            <Badge variant={t.dueSentences > 0 ? "default" : "secondary"}>
-              {t.dueSentences}
-            </Badge>
-            {generateMutation.isPending && generateMutation.variables === t.id ? (
+            <span>{t.dueSentences}</span>
+            {generateMutation.isPending && generateMutation.variables === t.id && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      generateSentences(t.id);
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Generate more
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteTopic(t.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             )}
           </div>
         ))}
@@ -137,6 +97,25 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
           </Link>
         )}
       </FloatingBar>
+      {selected.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-3 text-xs text-muted-foreground pb-12">
+          <button
+            className="cursor-pointer hover:text-foreground/70 transition-colors"
+            onClick={generateForSelected}
+            disabled={generateMutation.isPending}
+          >
+            {generateMutation.isPending ? "Generating..." : "Generate more"}
+          </button>
+          <span>·</span>
+          <button
+            className="cursor-pointer hover:text-foreground/70 transition-colors"
+            onClick={deleteSelected}
+            disabled={deleteMutation.isPending}
+          >
+            Remove
+          </button>
+        </div>
+      )}
     </>
   );
 }
