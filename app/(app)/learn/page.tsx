@@ -197,7 +197,7 @@ function LearnPage() {
         </div>
       </div>
 
-      {current.repeatCount > 0 && (
+      {current.repeatCount > 0 && showAnswer && (
         <p className="text-xs text-muted-foreground text-center -mt-4">
           {current.repeatCount}×
         </p>
@@ -209,7 +209,7 @@ function LearnPage() {
             variant="soft"
             onClick={() => {
               setShowAnswer(true);
-              setTimeout(() => playTts(current.targetText), 300);
+              setTimeout(() => playTts(current.targetText), 200);
             }}
             icon={<ArrowRight className="h-5 w-5" />}
           >
@@ -233,8 +233,8 @@ function LearnPage() {
                   onClick={() => rateSentence(grade)}
                 >
                   <span className="flex flex-col items-center leading-none">
-                    <span className="text-lg font-bold">{grade}</span>
-                    <span className="text-[10px] font-normal opacity-70">
+                    <span className="text-lg">{grade}</span>
+                    <span className="text-[10px] font-normal text-foreground/30">
                       {GRADE_LABELS[grade]}
                     </span>
                   </span>
