@@ -134,9 +134,9 @@ function LearnPage() {
     setShowAnswer(false);
     setRemaining(engine.remaining);
 
-    // Pick next from pool
+    // Pick next from pool - delay content swap to halfway through flip animation
     const next = engine.getNext();
-    setCurrent(next);
+    setTimeout(() => setCurrent(next), 175);
   }
 
   if (loading) {
@@ -204,53 +204,51 @@ function LearnPage() {
       )}
 
       <FloatingBar>
-        <div className="h-[6rem] flex flex-col justify-end space-y-2 overflow-hidden">
-          {!showAnswer ? (
-            <ActionButton
-              variant="soft"
-              onClick={() => {
-                setShowAnswer(true);
-                playTts(current.targetText);
-              }}
-              icon={<ArrowRight className="h-5 w-5" />}
+        {!showAnswer ? (
+          <ActionButton
+            variant="soft"
+            onClick={() => {
+              setShowAnswer(true);
+              setTimeout(() => playTts(current.targetText), 300);
+            }}
+            icon={<ArrowRight className="h-5 w-5" />}
+          >
+            Answer
+          </ActionButton>
+        ) : (
+          <div className="space-y-2">
+            <button
+              className="w-full h-8 shrink-0 flex items-center justify-center gap-2 text-sm text-foreground/50 bg-primary/10 rounded-lg border-0 cursor-pointer hover:bg-primary/15 transition-colors"
+              onClick={() => playTts(current.targetText)}
+              disabled={playingTts}
             >
-              Answer
-            </ActionButton>
-          ) : (
-            <>
-              <button
-                className="w-full h-8 shrink-0 flex items-center justify-center gap-2 text-sm text-foreground/50 bg-primary/10 rounded-lg border-0 cursor-pointer hover:bg-primary/15 transition-colors"
-                onClick={() => playTts(current.targetText)}
-                disabled={playingTts}
-              >
-                <Volume2 className="h-4 w-4" />
-                {playingTts ? "Playing..." : "Listen"}
-              </button>
-              <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14 shrink-0">
-                {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
-                  <button
-                    key={grade}
-                    className="h-14 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-                    onClick={() => rateSentence(grade)}
-                  >
-                    <span className="flex flex-col items-center leading-none">
-                      <span className="text-lg font-bold">{grade}</span>
-                      <span className="text-[10px] font-normal opacity-70">
-                        {GRADE_LABELS[grade]}
-                      </span>
+              <Volume2 className="h-4 w-4" />
+              {playingTts ? "Playing..." : "Listen"}
+            </button>
+            <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14">
+              {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
+                <button
+                  key={grade}
+                  className="h-14 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  onClick={() => rateSentence(grade)}
+                >
+                  <span className="flex flex-col items-center leading-none">
+                    <span className="text-lg font-bold">{grade}</span>
+                    <span className="text-[10px] font-normal opacity-70">
+                      {GRADE_LABELS[grade]}
                     </span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-        <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-1">
-          <span><NumberFlow value={completed} /> done</span>
-          <span>·</span>
-          <span><NumberFlow value={remaining} /> left</span>
-        </div>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </FloatingBar>
+      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-3 text-xs text-muted-foreground pb-12">
+        <span><NumberFlow value={completed} /> done</span>
+        <span>·</span>
+        <span><NumberFlow value={remaining} /> left</span>
+      </div>
     </div>
   );
 }
