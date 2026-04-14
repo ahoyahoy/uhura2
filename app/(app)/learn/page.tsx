@@ -183,17 +183,18 @@ function LearnPage() {
         <p className="text-xs text-muted-foreground">{current.topicTitle}</p>
       </div>
 
-      <div className="py-8 px-6 space-y-10 bg-white rounded-xl min-h-64">
-        {!showAnswer ? (
-          <p className="text-xl">{current.sourceText}</p>
-        ) : (
-          <>
+      <div className="flip-container">
+        <div className={`flip-card bg-white rounded-xl min-h-64 ${showAnswer ? "flipped" : ""}`}>
+          <div className="flip-front py-8 px-6">
+            <p className="text-xl">{current.sourceText}</p>
+          </div>
+          <div className="flip-back py-8 px-6 space-y-10">
             <p className="text-xl">{current.targetText}</p>
             <p className="text-sm text-muted-foreground">
               {current.sourceText}
             </p>
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
       {current.repeatCount > 0 && (
