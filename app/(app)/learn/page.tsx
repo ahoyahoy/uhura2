@@ -217,14 +217,15 @@ function LearnPage() {
           </ActionButton>
         ) : (
           <div className="space-y-2">
-            <button
-              className="w-full h-8 shrink-0 flex items-center justify-center gap-2 text-sm text-foreground/50 bg-primary/10 rounded-lg border-0 cursor-pointer hover:bg-primary/15 transition-colors"
-              onClick={() => playTts(current.targetText)}
-              disabled={playingTts}
-            >
-              <Volume2 className="h-4 w-4" />
-              {playingTts ? "Playing..." : "Listen"}
-            </button>
+            <div className="flex justify-center">
+              <button
+                className="flex items-center justify-center h-7 px-12 rounded-full bg-primary/10 text-muted-foreground cursor-pointer hover:bg-primary/15 transition-colors"
+                onClick={() => playTts(current.targetText)}
+                disabled={playingTts}
+              >
+                <Volume2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14">
               {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
                 <button

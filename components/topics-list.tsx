@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ArrowUpRight, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
 import { useDeleteTopic, useGenerateSentences } from "@/lib/hooks/use-mutations";
+import NumberFlow from "@number-flow/react";
 
 type TopicWithCounts = {
   id: string;
@@ -16,6 +17,17 @@ type TopicWithCounts = {
   totalSentences: number;
   dueSentences: number;
 };
+
+const BRAILLE_FRAMES = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+
+function BrailleSpinner() {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % BRAILLE_FRAMES.length), 80);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="inline-block w-4 text-center text-primary">{BRAILLE_FRAMES[frame]}</span>;
+}
 
 export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; classId?: string }) {
   const router = useRouter();
@@ -72,10 +84,10 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             <span className="flex-1 truncate">
               {t.title} <span className="text-xs text-muted-foreground font-normal">{t.level}</span>
             </span>
-            <span>{t.dueSentences}</span>
             {generateMutation.isPending && generateMutation.variables === t.id && (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <BrailleSpinner />
             )}
+            <span><NumberFlow value={t.dueSentences} /></span>
           </div>
         ))}
       </div>
@@ -87,7 +99,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             disabled={totalDue === 0}
             icon={<ArrowRight className="h-5 w-5" />}
           >
-            Start practicing{"\u2003"}<span className="font-light">{totalDue}</span>
+            Start practicing{"\u2003"}<span className="font-light"><NumberFlow value={totalDue} /></span>
           </ActionButton>
         ) : (
           <Link href={`/classes/${classId}/new`}>
@@ -98,22 +110,24 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
         )}
       </FloatingBar>
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-3 text-xs text-muted-foreground pb-12">
-          <button
-            className="cursor-pointer hover:text-foreground/70 transition-colors"
-            onClick={generateForSelected}
-            disabled={generateMutation.isPending}
-          >
-            {generateMutation.isPending ? "Generating..." : "Generate more"}
-          </button>
-          <span>·</span>
-          <button
-            className="cursor-pointer hover:text-foreground/70 transition-colors"
-            onClick={deleteSelected}
-            disabled={deleteMutation.isPending}
-          >
-            Remove
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center pb-12">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground bg-primary/10 rounded-full px-4 py-1.5">
+            <button
+              className="cursor-pointer hover:text-foreground/70 transition-colors"
+              onClick={generateForSelected}
+              disabled={generateMutation.isPending}
+            >
+              {generateMutation.isPending ? "Generating..." : "Generate more"}
+            </button>
+            <span>·</span>
+            <button
+              className="cursor-pointer hover:text-foreground/70 transition-colors"
+              onClick={deleteSelected}
+              disabled={deleteMutation.isPending}
+            >
+              Remove
+            </button>
+          </div>
         </div>
       )}
     </>
