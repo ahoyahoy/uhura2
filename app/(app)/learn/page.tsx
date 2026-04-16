@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Volume2, Eye, Loader2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Volume2, Turtle, Eye, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 import {
   SessionEngine,
@@ -51,6 +51,15 @@ const GRADE_LABELS: Record<Grade, string> = {
   5: "No idea",
 };
 
+function AudioProgress({ duration }: { duration: number }) {
+  return (
+    <div
+      className="absolute inset-y-0 left-0 bg-primary/15 rounded-full animate-audio-progress"
+      style={{ animationDuration: `${duration}s` }}
+    />
+  );
+}
+
 function LearnPage() {
   useScreenBg("tinted");
 
@@ -68,7 +77,9 @@ function LearnPage() {
   const [initialCount, setInitialCount] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [playingTts, setPlayingTts] = useState(false);
+  const [playingTts, setPlayingTts] = useState<false | "normal" | "slow">(false);
+  const [ttsDuration, setTtsDuration] = useState(0);
+  const [ttsKey, setTtsKey] = useState(0);
 
   const { sentences: dueSentences, isLoading: syncLoading } = useSentencesDue(topicIds);
   const rateMutation = useRateSentence();
@@ -103,16 +114,24 @@ function LearnPage() {
     }
   }, [current, showAnswer]);
 
+  const ttsSlowRef = useRef(false);
+
   async function playTts(text: string) {
-    setPlayingTts(true);
+    const audio = audioRef.current!;
+    const slow = ttsSlowRef.current;
+
+    setPlayingTts(slow ? "slow" : "normal");
     try {
       const url = await getAudioUrl(text);
-      const audio = audioRef.current!;
       audio.pause();
+      audio.currentTime = 0;
       audio.onended = () => setPlayingTts(false);
       audio.onerror = () => setPlayingTts(false);
       audio.src = url;
-      audio.load();
+      await new Promise<void>((res) => { audio.onloadedmetadata = () => res(); audio.load(); });
+      audio.playbackRate = slow ? 0.75 : 1;
+      setTtsDuration(audio.duration / audio.playbackRate);
+      setTtsKey((k) => k + 1);
       await audio.play().catch(() => setPlayingTts(false));
     } catch {
       setPlayingTts(false);
@@ -133,6 +152,7 @@ function LearnPage() {
 
     setShowAnswer(false);
     setRemaining(engine.remaining);
+    ttsSlowRef.current = false;
 
     // Pick next from pool - delay content swap to halfway through flip animation
     const next = engine.getNext();
@@ -217,13 +237,28 @@ function LearnPage() {
           </ActionButton>
         ) : (
           <div className="space-y-2">
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-2">
               <button
-                className="flex items-center justify-center h-7 px-12 rounded-full bg-primary/10 text-muted-foreground cursor-pointer hover:bg-primary/15 transition-colors"
-                onClick={() => playTts(current.targetText)}
-                disabled={playingTts}
+                className={`relative overflow-hidden flex items-center justify-center h-7 px-12 rounded-full cursor-pointer transition-colors ${
+                  playingTts === "normal"
+                    ? "bg-primary/20 text-primary"
+                    : "bg-primary/10 text-muted-foreground hover:bg-primary/15"
+                }`}
+                onClick={() => { ttsSlowRef.current = false; playTts(current.targetText); }}
               >
-                <Volume2 className="h-3.5 w-3.5" />
+                {playingTts === "normal" && <AudioProgress key={ttsKey} duration={ttsDuration} />}
+                <Volume2 className="h-3.5 w-3.5 relative z-10" />
+              </button>
+              <button
+                className={`relative overflow-hidden flex items-center justify-center h-7 w-7 rounded-full cursor-pointer transition-colors ${
+                  playingTts === "slow"
+                    ? "bg-primary/20 text-primary"
+                    : "bg-primary/10 text-muted-foreground hover:bg-primary/15"
+                }`}
+                onClick={() => { ttsSlowRef.current = true; playTts(current.targetText); }}
+              >
+                {playingTts === "slow" && <AudioProgress key={ttsKey} duration={ttsDuration} />}
+                <Turtle className="h-3.5 w-3.5 relative z-10" />
               </button>
             </div>
             <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14">

@@ -127,6 +127,7 @@
     @apply text-foreground;
     background-color: var(--background);
     transition: background-color 0.3s ease;
+    letter-spacing: -0.05em;
   }
   html {
     @apply font-sans;
@@ -162,4 +163,13 @@
 .flip-card.flipped .flip-front {
   position: absolute;
   inset: 0;
+}
+
+/* Audio progress */
+@keyframes audio-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+.animate-audio-progress {
+  animation: audio-progress linear forwards;
 }

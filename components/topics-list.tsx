@@ -104,7 +104,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
         ) : (
           <Link href={`/classes/${classId}/new`}>
             <ActionButton variant="soft" icon={<ArrowUpRight className="h-5 w-5" />}>
-              Create new topic
+              New topic
             </ActionButton>
           </Link>
         )}

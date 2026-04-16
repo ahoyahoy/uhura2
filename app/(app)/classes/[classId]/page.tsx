@@ -33,15 +33,20 @@ export default function ClassTopicsPage() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center">
+    <>
+    <div className="fixed top-0 left-0 right-0 z-10 px-8 py-4 bg-[var(--background)]/70 backdrop-blur-sm">
+      <div className="w-full max-w-2xl mx-auto flex items-center justify-between">
         <Link
           href="/classes"
           className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
+        <h1 className="text-2xl font-normal">Sentences</h1>
+        <div className="w-9" />
       </div>
+    </div>
+    <div className="w-full max-w-2xl mx-auto p-6 pt-20 pb-44 space-y-6">
 
       {topicsWithCounts.length === 0 ? (
         <>
@@ -51,7 +56,7 @@ export default function ClassTopicsPage() {
           <FloatingBar>
             <Link href={`/classes/${classId}/new`}>
               <ActionButton variant="soft" icon={<ArrowUpRight className="h-5 w-5" />}>
-                Create new topic
+                New topic
               </ActionButton>
             </Link>
           </FloatingBar>
@@ -60,5 +65,6 @@ export default function ClassTopicsPage() {
         <TopicsList topics={topicsWithCounts} classId={classId} />
       )}
     </div>
+    </>
   );
 }
