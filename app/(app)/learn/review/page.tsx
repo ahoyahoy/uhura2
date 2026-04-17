@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Volume2, Turtle, Eye, Loader2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Volume2, Eye, Loader2, Check } from "lucide-react";
 import Link from "next/link";
 import {
   SessionEngine,
@@ -51,6 +51,14 @@ const GRADE_LABELS: Record<Grade, string> = {
   5: "No idea",
 };
 
+const GRADE_LETTERS: Record<Grade, string> = {
+  1: "A",
+  2: "B",
+  3: "C",
+  4: "D",
+  5: "E",
+};
+
 function AudioProgress({ duration }: { duration: number }) {
   return (
     <div
@@ -71,6 +79,11 @@ function LearnPage() {
   const engineRef = useRef(new SessionEngine());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const initializedRef = useRef(false);
+  const [gradeStyle, setGradeStyle] = useState("numbers");
+
+  useEffect(() => {
+    setGradeStyle(localStorage.getItem("gradeStyle") ?? "numbers");
+  }, []);
 
   const [current, setCurrent] = useState<SessionSentence | null>(null);
   const [remaining, setRemaining] = useState(0);
@@ -170,21 +183,20 @@ function LearnPage() {
   // Session done
   if (!current) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
-        <Card>
-          <CardContent className="py-12 text-center space-y-4">
-            <Check className="h-12 w-12 mx-auto text-green-500" />
-            <h2 className="text-xl font-semibold">All done for now!</h2>
-            <p className="text-muted-foreground">
-              {initialCount > 0
-                ? `You reviewed ${initialCount} sentences.`
-                : "No sentences due for review."}
-            </p>
-            <Link href={backUrl}>
-              <Button>Back to Topics</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
+        <h1 className="mt-auto mb-4 text-4xl font-normal">All done for today</h1>
+        <p className="text-muted-foreground">
+          {initialCount > 0
+            ? `${initialCount} sentences reviewed`
+            : "No sentences due for review"}
+        </p>
+        <FloatingBar>
+          <Link href={backUrl}>
+            <ActionButton icon={<ArrowRight className="h-5 w-5" />}>
+              Finish
+            </ActionButton>
+          </Link>
+        </FloatingBar>
       </div>
     );
   }
@@ -204,7 +216,7 @@ function LearnPage() {
       </div>
 
       <div className="flip-container">
-        <div className={`flip-card bg-white rounded-xl min-h-64 ${showAnswer ? "flipped" : ""}`}>
+        <div className={`flip-card bg-card rounded-xl min-h-64 ${showAnswer ? "flipped" : ""}`}>
           <div className="flip-front py-8 px-6">
             <p className="text-xl">{current.sourceText}</p>
           </div>
@@ -237,28 +249,17 @@ function LearnPage() {
           </ActionButton>
         ) : (
           <div className="space-y-2">
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center">
               <button
                 className={`relative overflow-hidden flex items-center justify-center h-7 px-12 rounded-full cursor-pointer transition-colors ${
-                  playingTts === "normal"
+                  playingTts
                     ? "bg-primary/20 text-primary"
                     : "bg-primary/10 text-muted-foreground hover:bg-primary/15"
                 }`}
                 onClick={() => { ttsSlowRef.current = false; playTts(current.targetText); }}
               >
-                {playingTts === "normal" && <AudioProgress key={ttsKey} duration={ttsDuration} />}
+                {playingTts && <AudioProgress key={ttsKey} duration={ttsDuration} />}
                 <Volume2 className="h-3.5 w-3.5 relative z-10" />
-              </button>
-              <button
-                className={`relative overflow-hidden flex items-center justify-center h-7 w-7 rounded-full cursor-pointer transition-colors ${
-                  playingTts === "slow"
-                    ? "bg-primary/20 text-primary"
-                    : "bg-primary/10 text-muted-foreground hover:bg-primary/15"
-                }`}
-                onClick={() => { ttsSlowRef.current = true; playTts(current.targetText); }}
-              >
-                {playingTts === "slow" && <AudioProgress key={ttsKey} duration={ttsDuration} />}
-                <Turtle className="h-3.5 w-3.5 relative z-10" />
               </button>
             </div>
             <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14">
@@ -269,8 +270,8 @@ function LearnPage() {
                   onClick={() => rateSentence(grade)}
                 >
                   <span className="flex flex-col items-center leading-none">
-                    <span className="text-lg">{grade}</span>
-                    <span className="text-[10px] font-normal text-foreground/30">
+                    <span className="text-lg">{gradeStyle === "letters" ? GRADE_LETTERS[grade] : grade}</span>
+                    <span className="text-[7px] font-medium uppercase tracking-[0.1em] text-foreground/30 font-[family-name:var(--font-inter)]">
                       {GRADE_LABELS[grade]}
                     </span>
                   </span>
@@ -280,10 +281,12 @@ function LearnPage() {
           </div>
         )}
       </FloatingBar>
-      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-3 text-xs text-muted-foreground pb-12">
-        <span><NumberFlow value={completed} /> done</span>
-        <span>·</span>
-        <span><NumberFlow value={remaining} /> left</span>
+      <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-10">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground px-4 py-1.5">
+          <span><NumberFlow value={completed} /> done</span>
+          <span>·</span>
+          <span><NumberFlow value={remaining} /> left</span>
+        </div>
       </div>
     </div>
   );

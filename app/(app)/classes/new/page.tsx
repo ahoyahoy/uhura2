@@ -58,7 +58,7 @@ export default function NewCoursePage() {
         <div className="relative">
           <ArrowUpRight className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <select
-            className="w-full rounded-lg px-4 py-3 pr-9 text-sm bg-white appearance-none"
+            className="w-full rounded-lg px-4 py-3 pr-9 text-sm bg-card appearance-none"
             value={source}
             onChange={(e) => setSource(e.target.value)}
           >
@@ -75,7 +75,7 @@ export default function NewCoursePage() {
         <div className="relative">
           <ArrowUpRight className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <select
-            className="w-full rounded-lg px-4 py-3 pr-9 text-sm bg-white appearance-none"
+            className="w-full rounded-lg px-4 py-3 pr-9 text-sm bg-card appearance-none"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
           >

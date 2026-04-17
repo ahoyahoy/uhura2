@@ -47,7 +47,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
   function startReview() {
     if (selected.size === 0) return;
     const ids = Array.from(selected).join(",");
-    router.push(`/learn?topics=${ids}${classId ? `&classId=${classId}` : ""}`);
+    router.push(`/learn/review?topics=${ids}${classId ? `&classId=${classId}` : ""}`);
   }
 
   function generateForSelected() {
@@ -110,7 +110,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
         )}
       </FloatingBar>
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center pb-12">
+        <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-10">
           <div className="flex items-center gap-3 text-xs text-muted-foreground bg-primary/10 rounded-full px-4 py-1.5">
             <button
               className="cursor-pointer hover:text-foreground/70 transition-colors"

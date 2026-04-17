@@ -39,16 +39,19 @@ export default function HomePage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-normal text-muted-foreground">{greeting}</h1>
-          {session?.user?.image ? (
-            <img
-              src={session.user.image}
-              alt=""
-              className="h-9 w-9 rounded-full"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="h-9 w-9 rounded-full bg-primary/10" />
-          )}
+          <Link
+            href="/settings"
+            className="h-9 w-9 rounded-full overflow-hidden bg-primary/10 block"
+          >
+            {session?.user?.image && (
+              <img
+                src={session.user.image}
+                alt=""
+                className="h-9 w-9"
+                referrerPolicy="no-referrer"
+              />
+            )}
+          </Link>
         </div>
         {cls && (
           <Link

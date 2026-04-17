@@ -83,7 +83,7 @@ export default function NewTopicPage() {
                   className={`px-4 py-2 text-sm rounded-full transition-colors ${
                     description === t.prompt
                       ? "bg-primary text-primary-foreground"
-                      : "bg-white hover:bg-primary/10"
+                      : "bg-card hover:bg-primary/10"
                   }`}
                   onClick={() => { setDescription(t.prompt); setShowTemplates(false); }}
                 >
@@ -94,7 +94,7 @@ export default function NewTopicPage() {
           </div>
         )}
         <textarea
-          className="w-full rounded-lg px-4 py-3 text-sm bg-white resize-none overflow-hidden"
+          className="w-full rounded-lg px-4 py-3 text-sm bg-card resize-none overflow-hidden"
           placeholder="Describe what you want to practice..."
           value={description}
           onChange={(e) => {
@@ -112,7 +112,7 @@ export default function NewTopicPage() {
               className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
                 level === l
                   ? "bg-primary text-primary-foreground"
-                  : "bg-white hover:bg-primary/10"
+                  : "bg-card hover:bg-primary/10"
               }`}
               onClick={() => setLevel(l)}
             >
