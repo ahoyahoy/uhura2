@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
-import { SignOutButton } from "@/components/sign-out-button";
-import { getLanguageLabel, getLanguageFlag } from "@/lib/languages";
+import { Loader2, Plus } from "lucide-react";
+import { getLanguageLabel } from "@/lib/languages";
 import { useSync } from "@/lib/hooks/use-sync";
 import Link from "next/link";
 
@@ -62,43 +60,26 @@ export default function ClassesPage() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Courses</h1>
-        <div className="flex items-center gap-2">
-          <Link href="/classes/new">
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-1" />
-              New Course
-            </Button>
-          </Link>
-          <SignOutButton />
+    <div className="flex flex-col justify-center min-h-svh p-8 space-y-4">
+      <Link
+        href="/classes/new"
+        className="fixed top-6 right-6 inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
+      >
+        <Plus className="h-4 w-4" />
+      </Link>
+      {sortedClasses.map((c) => (
+        <div
+          key={c.id}
+          className="cursor-pointer transition-transform duration-200 active:translate-y-0.5 active:duration-0"
+          onClick={() => {
+            localStorage.setItem("lastClassId", c.id);
+            router.push(`/home`);
+          }}
+        >
+          <span className="text-4xl font-normal">{getLanguageLabel(c.targetLanguage)}</span>
+          <span className="text-lg text-muted-foreground ml-3">{getLanguageLabel(c.sourceLanguage)}</span>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        {sortedClasses.map((c) => (
-          <div
-            key={c.id}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors"
-            onClick={() => {
-              localStorage.setItem("lastClassId", c.id);
-              router.push(`/classes/${c.id}`);
-            }}
-          >
-            <span className="text-lg">
-              {getLanguageFlag(c.sourceLanguage)}
-            </span>
-            <span className="text-muted-foreground">→</span>
-            <span className="text-lg">
-              {getLanguageFlag(c.targetLanguage)}
-            </span>
-            <span className="flex-1 font-medium">
-              {getLanguageLabel(c.sourceLanguage)} → {getLanguageLabel(c.targetLanguage)}
-            </span>
-          </div>
-        ))}
-      </div>
+      ))}
     </div>
   );
 }

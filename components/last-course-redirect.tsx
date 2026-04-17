@@ -8,12 +8,7 @@ export function LastCourseRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    const lastClassId = localStorage.getItem("lastClassId");
-    if (lastClassId) {
-      router.replace(`/classes/${lastClassId}`);
-    } else {
-      router.replace("/classes");
-    }
+    router.replace("/home");
   }, [router]);
 
   return (

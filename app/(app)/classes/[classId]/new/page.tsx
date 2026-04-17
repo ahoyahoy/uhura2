@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useCreateTopic } from "@/lib/hooks/use-mutations";
+import { FloatingBar } from "@/components/floating-bar";
+import { ActionButton } from "@/components/action-button";
+import { useScreenBg } from "@/lib/hooks/use-screen-bg";
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
@@ -34,6 +33,7 @@ const TEMPLATES = [
 ];
 
 export default function NewTopicPage() {
+  useScreenBg("tinted");
   const router = useRouter();
   const { classId } = useParams<{ classId: string }>();
   const [description, setDescription] = useState("");
@@ -42,8 +42,7 @@ export default function NewTopicPage() {
 
   const createTopic = useCreateTopic();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     createTopic.mutate(
       { description, level, classId },
       { onSuccess: () => router.replace(`/classes/${classId}`) }
@@ -51,77 +50,87 @@ export default function NewTopicPage() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 space-y-6">
+    <div className="flex flex-col items-stretch min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
       <Link
         href={`/classes/${classId}`}
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
       >
-        <ArrowLeft className="h-4 w-4 mr-1" />
-        Back
+        <ArrowLeft className="h-4 w-4" />
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>New Topic</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="description">Prompt</Label>
+      <h1 className="mt-auto mb-12 text-4xl font-normal">New Topic</h1>
+
+      <div className="space-y-4 mb-8">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => setShowTemplates(true)}
+        >
+          Templates
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+
+        {showTemplates && (
+          <div
+            className="fixed inset-0 z-50 bg-[var(--background)] flex flex-col justify-center p-8"
+            onClick={() => setShowTemplates(false)}
+          >
+            <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+              {TEMPLATES.map((t) => (
                 <button
+                  key={t.label}
                   type="button"
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setShowTemplates(!showTemplates)}
+                  className={`px-4 py-2 text-sm rounded-full transition-colors ${
+                    description === t.prompt
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-white hover:bg-primary/10"
+                  }`}
+                  onClick={() => { setDescription(t.prompt); setShowTemplates(false); }}
                 >
-                  From template
-                  <ChevronDown className={`h-3 w-3 transition-transform ${showTemplates ? "rotate-180" : ""}`} />
+                  {t.label}
                 </button>
-              </div>
-              {showTemplates && (
-                <div className="flex flex-wrap gap-1.5">
-                  {TEMPLATES.map((t) => (
-                    <button
-                      key={t.label}
-                      type="button"
-                      className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
-                        description === t.prompt
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "hover:bg-accent border-border"
-                      }`}
-                      onClick={() => { setDescription(t.prompt); setShowTemplates(false); }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <Textarea
-                id="description"
-                placeholder="Describe what you want to practice..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                required
-              />
+              ))}
             </div>
-            <div className="space-y-2">
-              <Label>Level</Label>
-              <div className="flex gap-2">
-                {LEVELS.map((l) => (
-                  <Button key={l} type="button" variant={level === l ? "default" : "outline"} size="sm" onClick={() => setLevel(l)}>
-                    {l}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <Button type="submit" className="w-full" disabled={createTopic.isPending || !description.trim()}>
-              {createTopic.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {createTopic.isPending ? "Generating sentences..." : "Create & Generate Sentences"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        )}
+        <textarea
+          className="w-full rounded-lg px-4 py-3 text-sm bg-white resize-none overflow-hidden"
+          placeholder="Describe what you want to practice..."
+          value={description}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            e.target.style.height = "auto";
+            e.target.style.height = e.target.scrollHeight + "px";
+          }}
+          rows={3}
+        />
+        <div className="flex justify-center gap-2">
+          {LEVELS.map((l) => (
+            <button
+              key={l}
+              type="button"
+              className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
+                level === l
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white hover:bg-primary/10"
+              }`}
+              onClick={() => setLevel(l)}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <FloatingBar>
+        <ActionButton
+          onClick={handleSubmit}
+          disabled={createTopic.isPending || !description.trim()}
+          icon={createTopic.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
+        >
+          {createTopic.isPending ? "Generating..." : "Create topic"}
+        </ActionButton>
+      </FloatingBar>
     </div>
   );
 }

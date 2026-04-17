@@ -196,7 +196,7 @@ function LearnPage() {
       <div className="flex items-center justify-between">
         <Link
           href={backUrl}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
