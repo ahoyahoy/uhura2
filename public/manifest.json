@@ -4,8 +4,8 @@
   "description": "AI-powered sentence trainer with spaced repetition",
   "start_url": "/home",
   "display": "standalone",
-  "background_color": "#E6EAFF",
-  "theme_color": "#0029FF",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/icon.svg",
