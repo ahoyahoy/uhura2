@@ -17,14 +17,16 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0029FF",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0C0F1A" },
+  ],
 };
 
 export const metadata: Metadata = {
   title: "Uhura – Sentence Trainer",
   description: "AI-powered English sentence trainer with spaced repetition",
   manifest: "/manifest.json",
-  themeColor: "#0029FF",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
