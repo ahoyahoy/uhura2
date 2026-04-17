@@ -121,6 +121,42 @@
   --sidebar-ring: #6B8AFF;
 }
 
+.oled {
+  --main: #6B8AFF;
+  --main-bg: #000000;
+  --background: #000000;
+  --foreground: #E8EAED;
+  --card: #111111;
+  --card-foreground: #E8EAED;
+  --popover: #111111;
+  --popover-foreground: #E8EAED;
+  --primary: #6B8AFF;
+  --primary-foreground: #000000;
+  --secondary: #111111;
+  --secondary-foreground: #E8EAED;
+  --muted: #111111;
+  --muted-foreground: #8B90A0;
+  --accent: #111111;
+  --accent-foreground: #E8EAED;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: #6B8AFF;
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: #000000;
+  --sidebar-foreground: #E8EAED;
+  --sidebar-primary: #6B8AFF;
+  --sidebar-primary-foreground: #E8EAED;
+  --sidebar-accent: #111111;
+  --sidebar-accent-foreground: #E8EAED;
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: #6B8AFF;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50 select-none;

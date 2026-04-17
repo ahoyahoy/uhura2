@@ -9,6 +9,7 @@ import { signOut } from "@/lib/auth-client";
 const THEMES = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
+  { value: "oled", label: "OLED" },
   { value: "system", label: "System" },
 ] as const;
 
