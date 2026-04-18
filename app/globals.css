@@ -122,26 +122,26 @@
 }
 
 .oled {
-  --main: #6B8AFF;
+  --main: #0029FF;
   --main-bg: #000000;
   --background: #000000;
   --foreground: #E8EAED;
-  --card: #111111;
+  --card: transparent;
   --card-foreground: #E8EAED;
-  --popover: #111111;
+  --popover: #000000;
   --popover-foreground: #E8EAED;
-  --primary: #6B8AFF;
-  --primary-foreground: #000000;
-  --secondary: #111111;
+  --primary: #0029FF;
+  --primary-foreground: #ffffff;
+  --secondary: transparent;
   --secondary-foreground: #E8EAED;
-  --muted: #111111;
+  --muted: transparent;
   --muted-foreground: #8B90A0;
-  --accent: #111111;
+  --accent: transparent;
   --accent-foreground: #E8EAED;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: #6B8AFF;
+  --border: rgba(255, 255, 255, 0.2);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #0029FF;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -149,12 +149,28 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: #000000;
   --sidebar-foreground: #E8EAED;
-  --sidebar-primary: #6B8AFF;
-  --sidebar-primary-foreground: #E8EAED;
-  --sidebar-accent: #111111;
+  --sidebar-primary: #0029FF;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: transparent;
   --sidebar-accent-foreground: #E8EAED;
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: #6B8AFF;
+  --sidebar-border: rgba(255, 255, 255, 0.2);
+  --sidebar-ring: #0029FF;
+}
+
+/* OLED: outlined surfaces instead of filled */
+.oled .bg-card {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.oled .bg-primary\/10,
+.oled .bg-primary\/15,
+.oled .bg-primary\/20 {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.oled .hover\:bg-primary\/10:hover,
+.oled .hover\:bg-primary\/15:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 @layer base {
