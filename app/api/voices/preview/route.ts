@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { db } from "@/db";
+import { languageClass } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { isAllowedVoice } from "@/lib/voices";
+import { VOICE_SAMPLES } from "@/lib/voice-samples";
+import { speechForText, TtsError } from "@/lib/tts";
 
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const voiceId = req.nextUrl.searchParams.get("voiceId") ?? "";
-  if (!isAllowedVoice(voiceId)) return NextResponse.json({ error: "Unknown voice" }, { status: 400 });
 
-  const response = await fetch(`https://api.elevenlabs.io/v1/voices/${voiceId}`, {
-    headers: { "xi-api-key": process.env.ELEVENLABS_KEY! }, next: { revalidate: 3600 },
-  });
-  if (!response.ok) return NextResponse.json({ error: "Preview unavailable" }, { status: 502 });
-  const voice = await response.json() as { preview_url?: string };
-  if (!voice.preview_url || new URL(voice.preview_url).protocol !== "https:") {
+  const voiceId = req.nextUrl.searchParams.get("voiceId") ?? "";
+  const classId = req.nextUrl.searchParams.get("classId") ?? "";
+  if (!isAllowedVoice(voiceId) || !/^[0-9a-f-]{36}$/i.test(classId)) {
+    return NextResponse.json({ error: "Invalid preview request" }, { status: 400 });
+  }
+  const [course] = await db.select({ language: languageClass.targetLanguage })
+    .from(languageClass)
+    .where(and(eq(languageClass.id, classId), eq(languageClass.userId, session.user.id)));
+  if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+  const sample = VOICE_SAMPLES[course.language];
+  if (!sample) return NextResponse.json({ error: "No sample for this language" }, { status: 422 });
+
+  try {
+    const audio = await speechForText(sample, course.language, voiceId);
+    return new NextResponse(new Uint8Array(audio), {
+      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=31536000, immutable" },
+    });
+  } catch (error) {
+    if (error instanceof TtsError) return NextResponse.json({ error: error.message }, { status: error.status });
+    console.error("Voice preview generation failed", error);
     return NextResponse.json({ error: "Preview unavailable" }, { status: 502 });
   }
-  const audio = await fetch(voice.preview_url);
-  if (!audio.ok || Number(audio.headers.get("content-length") ?? 0) > 2_000_000) {
-    return NextResponse.json({ error: "Preview unavailable" }, { status: 502 });
-  }
-  const bytes = await audio.arrayBuffer();
-  if (bytes.byteLength > 2_000_000) return NextResponse.json({ error: "Preview too large" }, { status: 502 });
-  return new NextResponse(bytes, {
-    headers: { "Content-Type": audio.headers.get("content-type") ?? "audio/mpeg", "Cache-Control": "private, max-age=86400" },
-  });
 }

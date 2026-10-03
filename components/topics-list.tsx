@@ -126,7 +126,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
               disabled={generateMutation.isPending || selected.size !== 1}
               title={selected.size !== 1 ? "Select one lesson to add sentences" : undefined}
             >
-              {generateMutation.isPending ? "Generating..." : "Generate more"}
+              {generateMutation.isPending ? "Generating..." : generateMutation.isError ? "Try again" : "Generate more"}
             </button>
             <span>·</span>
             <button
@@ -137,7 +137,6 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
               Remove
             </button>
           </div>
-          {generateMutation.isError && <p role="alert" className="absolute top-9 text-xs text-destructive text-center px-4">{generateMutation.error.message}</p>}
           {generateMutation.isSuccess && <p role="status" className="absolute top-9 text-xs text-muted-foreground">Added {generateMutation.data.sentences.length} sentences</p>}
         </div>
       )}

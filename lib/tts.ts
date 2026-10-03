@@ -51,7 +51,15 @@ export async function speechForSentence(sentenceId: string, userId: string): Pro
   }
   if (!voiceId || !isAllowedVoice(voiceId)) throw new TtsError("Voice unavailable", 422);
 
-  const key = turboCacheKey(row.text, row.language, voiceId);
+  return speechForText(row.text, row.language, voiceId);
+}
+
+/** Auth and ownership must be checked by the caller before using this shared cache. */
+export async function speechForText(text: string, language: string, voiceId: string): Promise<Buffer> {
+  if (!text.trim() || text.length > 350 || !isAllowedVoice(voiceId)) {
+    throw new TtsError("Invalid audio request", 400);
+  }
+  const key = turboCacheKey(text, language, voiceId);
   const cached = await cachedAudio(key);
   if (cached) return cached;
 
@@ -77,15 +85,15 @@ export async function speechForSentence(sentenceId: string, userId: string): Pro
   }
 
   try {
-    // Global cap: 10,000 uncached characters per UTC day, about $0.40 at standard v4 Turbo pricing.
+    // Global cap: 10,000 uncached characters per UTC day, including voice samples.
     const day = new Date().toISOString().slice(0, 10);
-    const [budget] = await db.insert(ttsDailyBudget).values({ day, characters: row.text.length })
+    const [budget] = await db.insert(ttsDailyBudget).values({ day, characters: text.length })
       .onConflictDoUpdate({ target: ttsDailyBudget.day,
-        set: { characters: sql`${ttsDailyBudget.characters} + ${row.text.length}` },
-        setWhere: sql`${ttsDailyBudget.characters} + ${row.text.length} <= 10000`,
+        set: { characters: sql`${ttsDailyBudget.characters} + ${text.length}` },
+        setWhere: sql`${ttsDailyBudget.characters} + ${text.length} <= 10000`,
       }).returning({ day: ttsDailyBudget.day });
     if (!budget) throw new TtsError("Daily audio budget reached", 429);
-    const audio = await generateTurboSpeech(row.text, row.language, process.env.ELEVENLABS_KEY!, voiceId);
+    const audio = await generateTurboSpeech(text, language, process.env.ELEVENLABS_KEY!, voiceId);
     await db.insert(ttsCache).values({ textHash: key, audio }).onConflictDoNothing();
     await db.update(ttsGeneration).set({ status: "completed", updatedAt: new Date() })
       .where(eq(ttsGeneration.cacheKey, key));

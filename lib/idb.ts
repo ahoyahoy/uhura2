@@ -26,6 +26,7 @@ export interface IDBSentence {
   topicId: string;
   sourceText: string;
   targetText: string;
+  voiceId?: string | null;
   createdAt: string;
 }
 

@@ -13,6 +13,7 @@ export type SessionSentence = {
   id: string;
   sourceText: string;
   targetText: string;
+  voiceId?: string | null;
   topicTitle: string;
   level: number;
   // session-only state
@@ -26,6 +27,7 @@ export type InputSentence = {
   id: string;
   sourceText: string;
   targetText: string;
+  voiceId?: string | null;
   topicTitle: string;
   progress: { level: number; lastGrade: string | null } | null;
 };
@@ -65,6 +67,7 @@ export class SessionEngine {
         id: s.id,
         sourceText: s.sourceText,
         targetText: s.targetText,
+        voiceId: s.voiceId,
         topicTitle: s.topicTitle,
         level: s.progress?.level ?? 0,
         ratingHistory: [],

@@ -1,0 +1,26 @@
+// A short, natural sample for every target language offered in the course picker.
+// These are generated only on demand and share the permanent TTS cache.
+export const VOICE_SAMPLES: Record<string, string> = {
+  cs: "Ahoj, jak se máš?",
+  en: "Hello, how are you?",
+  de: "Hallo, wie geht es dir?",
+  es: "Hola, ¿cómo estás?",
+  fr: "Bonjour, comment ça va ?",
+  it: "Ciao, come stai?",
+  pt: "Olá, tudo bem?",
+  nl: "Hallo, hoe gaat het?",
+  pl: "Cześć, jak się masz?",
+  sk: "Ahoj, ako sa máš?",
+  uk: "Привіт, як справи?",
+  ru: "Привет, как дела?",
+  ja: "こんにちは。お元気ですか？",
+  ko: "안녕하세요. 어떻게 지내세요?",
+  zh: "你好，你好吗？",
+  sv: "Hej, hur mår du?",
+  no: "Hei, hvordan har du det?",
+  da: "Hej, hvordan har du det?",
+  fi: "Hei, mitä kuuluu?",
+  tr: "Merhaba, nasılsın?",
+  ar: "مرحبًا، كيف حالك؟",
+  hi: "नमस्ते, आप कैसे हैं?",
+};

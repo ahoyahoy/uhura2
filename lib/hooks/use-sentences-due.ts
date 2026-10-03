@@ -32,6 +32,7 @@ export function useSentencesDue(topicIds: string[]) {
           id: s.id,
           sourceText: s.sourceText,
           targetText: s.targetText,
+          voiceId: s.voiceId,
           topicTitle: topic?.title ?? "",
           lastReviewedAt: p?.nextReviewAt ?? null,
           level: p?.level ?? 0,
@@ -44,7 +45,7 @@ export function useSentencesDue(topicIds: string[]) {
 
     // Strip fields that SessionEngine doesn't need
     return shuffled.map((item) => ({
-      id: item.id, sourceText: item.sourceText, targetText: item.targetText,
+      id: item.id, sourceText: item.sourceText, targetText: item.targetText, voiceId: item.voiceId,
       topicTitle: item.topicTitle, progress: item.progress,
     }));
   }, [data, topicIds]);

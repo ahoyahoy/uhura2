@@ -52,6 +52,7 @@ export async function GET() {
         topicId: sentence.topicId,
         sourceText: sentence.sourceText,
         targetText: sentence.targetText,
+        voiceId: sentence.voiceId,
         createdAt: sentence.createdAt,
       })
       .from(sentence)

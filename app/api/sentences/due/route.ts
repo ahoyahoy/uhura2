@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
       id: sentence.id,
       sourceText: sentence.sourceText,
       targetText: sentence.targetText,
+      voiceId: sentence.voiceId,
       topicTitle: topic.title,
       level: sentenceProgress.level,
       lastGrade: sentenceProgress.lastGrade,
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest) {
     id: r.id,
     sourceText: r.sourceText,
     targetText: r.targetText,
+    voiceId: r.voiceId,
     topicTitle: r.topicTitle,
     lastReviewedAt: r.nextReviewAt,
     level: r.level,
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
   }));
 
   const sentences = weightedShuffle(mapped).map((item) => ({
-    id: item.id, sourceText: item.sourceText, targetText: item.targetText,
+    id: item.id, sourceText: item.sourceText, targetText: item.targetText, voiceId: item.voiceId,
     topicTitle: item.topicTitle, progress: item.progress,
   }));
 

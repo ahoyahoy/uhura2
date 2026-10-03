@@ -61,6 +61,7 @@ async function fetchAndPersist(): Promise<SyncData> {
     topicId: s.topicId,
     sourceText: s.sourceText,
     targetText: s.targetText,
+    voiceId: s.voiceId,
     createdAt: toISOString(s.createdAt),
   }));
 
@@ -108,6 +109,9 @@ export function useSync() {
         idb.progress.toArray(),
       ]);
 
+      if (sentences.some((sentence) => !("voiceId" in sentence))) {
+        return fetchAndPersist();
+      }
       if (topics.length > 0 || classes.length > 0) {
         // IDB has data → return immediately, schedule background refetch
         setTimeout(() => queryClient.invalidateQueries({ queryKey: ["sync"] }), 1);

@@ -10,7 +10,7 @@ Do not commit `.env.local`. The server needs the configured database, auth, Open
 
 ## Lessons and audio
 
-Lesson creation stores the learning goal, focus, practice style, register, and a selection of up to six curated voices. The selected voices are remembered in this browser for the next lesson. The backend assigns one voice to each sentence, avoiding the immediately previous voice when possible. Adding sentences keeps the same lesson goal and sends the existing sentence pairs to the generator; the server filters duplicates and runs a bounded teacher review. Generated pairs can be reviewed and edited before practice.
+Lesson creation stores the learning goal, focus, practice style, register, and a selection of up to six curated voices. The selected voices are remembered in this browser for the next lesson. Each voice card is selectable as a whole; its sample is generated in the course's target language, cached permanently, and shows loading/playback state. Sarah is played at a lower volume to match the others. The backend assigns one voice to each sentence, avoiding the immediately previous voice when possible. Adding sentences keeps the same lesson goal and sends the existing sentence pairs to the generator; the server filters duplicates and runs a bounded teacher review. Generated pairs can be reviewed and edited before practice.
 
 The browser requests speech with a sentence ID only. The server checks ownership, loads text and voice, calls ElevenLabs Turbo v4, and stores the audio in the database with a key based on model, language, voice and text. Cached audio is reused indefinitely; editing a sentence creates a new cache key. Uncached speech is limited to 10,000 input characters per UTC day across the app.
 

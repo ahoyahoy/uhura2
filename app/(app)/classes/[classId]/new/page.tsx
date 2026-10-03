@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, ChevronDown, Pause, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { useCreateTopic } from "@/lib/hooks/use-mutations";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
 import { useScreenBg } from "@/lib/hooks/use-screen-bg";
+import { VOICES } from "@/lib/voice-catalog";
+import { voiceVolume } from "@/lib/voice-volume";
+import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string";
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const GOALS = [
@@ -27,9 +30,20 @@ const REGISTERS = [
   { id: "work_polite", label: "Polite work" },
   { id: "formal_written", label: "Formal writing" },
 ];
-type VoiceOption = { id: string; name: string; description: string; gender: string };
 const DEFAULT_VOICES = ["UQoLnPXvf18gaKpLzfb8", "EXAVITQu4vr4xnSDxMaL", "JBFqnCBsd6RMkjVDRZzb"];
 const LAST_VOICES_KEY = "uhura:lastVoiceIds";
+
+function validVoiceIds(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    const available = new Set<string>(VOICES.map((voice) => voice.id));
+    if (Array.isArray(parsed)) {
+      const valid = parsed.filter((id): id is string => typeof id === "string" && available.has(id));
+      if (valid.length) return [...new Set(valid)];
+    }
+  } catch { /* use defaults */ }
+  return DEFAULT_VOICES;
+}
 
 const TEMPLATES = [
   { label: "Introducing yourself", prompt: "Introducing myself — name, age, where I'm from, what I do for a living, my family, basic personal info." },
@@ -62,54 +76,59 @@ export default function NewTopicPage() {
   const [focus, setFocus] = useState("");
   const [practiceStyle, setPracticeStyle] = useState("varied");
   const [register, setRegister] = useState("neutral_spoken");
-  const [voiceIds, setVoiceIds] = useState<string[]>(DEFAULT_VOICES);
-  const [voices, setVoices] = useState<VoiceOption[]>([]);
-  const [voicesError, setVoicesError] = useState<string | null>(null);
+  const rememberedVoices = useStoredString(LAST_VOICES_KEY, JSON.stringify(DEFAULT_VOICES));
+  const [draftVoiceIds, setDraftVoiceIds] = useState<string[] | null>(null);
+  const voiceIds = draftVoiceIds ?? validVoiceIds(rememberedVoices);
   const previewRef = useRef<HTMLAudioElement | null>(null);
+  const [previewState, setPreviewState] = useState<{ id: string; status: "loading" | "playing" } | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
 
   const createTopic = useCreateTopic();
 
   useEffect(() => {
-    let active = true;
-    fetch("/api/voices").then(async (res) => {
-      if (!res.ok) throw new Error("Voices are temporarily unavailable");
-      return res.json();
-    }).then((data: { voices: VoiceOption[] }) => {
-      if (!active) return;
-      setVoices(data.voices);
-      const available = new Set(data.voices.map((voice) => voice.id));
-      let remembered: unknown = null;
-      try { remembered = JSON.parse(localStorage.getItem(LAST_VOICES_KEY) ?? "null"); } catch { /* use defaults */ }
-      setVoiceIds((selected) => {
-        if (Array.isArray(remembered)) selected = remembered.filter((id): id is string => typeof id === "string");
-        const valid = selected.filter((id) => available.has(id));
-        return valid.length ? valid : DEFAULT_VOICES.filter((id) => available.has(id)).length
-          ? DEFAULT_VOICES.filter((id) => available.has(id))
-          : data.voices.slice(0, 1).map((voice) => voice.id);
-      });
-    }).catch((error) => { if (active) setVoicesError(error.message); });
-    return () => { active = false; previewRef.current?.pause(); };
+    return () => { previewRef.current?.pause(); previewRef.current = null; };
   }, []);
 
   function toggleVoice(id: string) {
-    setVoiceIds((selected) => selected.includes(id)
-      ? selected.length > 1 ? selected.filter((value) => value !== id) : selected
-      : [...selected, id]);
+    setDraftVoiceIds((draft) => {
+      const selected = draft ?? validVoiceIds(rememberedVoices);
+      return selected.includes(id)
+        ? selected.length > 1 ? selected.filter((value) => value !== id) : selected
+        : [...selected, id];
+    });
   }
 
   function playPreview(id: string) {
+    if (previewState?.id === id && previewState.status === "loading") return;
+    if (previewState?.id === id && previewState.status === "playing") {
+      previewRef.current?.pause();
+      previewRef.current = null;
+      setPreviewState(null);
+      return;
+    }
     previewRef.current?.pause();
-    const audio = new Audio(`/api/voices/preview?voiceId=${encodeURIComponent(id)}`);
+    const audio = new Audio(`/api/voices/preview?voiceId=${encodeURIComponent(id)}&classId=${encodeURIComponent(classId)}`);
+    audio.volume = voiceVolume(id);
     previewRef.current = audio;
-    audio.play().catch(() => setVoicesError("Could not play this voice sample"));
+    setPreviewState({ id, status: "loading" });
+    audio.onplaying = () => { if (previewRef.current === audio) setPreviewState({ id, status: "playing" }); };
+    audio.onwaiting = () => { if (previewRef.current === audio) setPreviewState({ id, status: "loading" }); };
+    audio.onended = () => { if (previewRef.current === audio) { previewRef.current = null; setPreviewState(null); } };
+    audio.onerror = () => { if (previewRef.current === audio) { previewRef.current = null; setPreviewState(null); } };
+    audio.play().catch((error) => {
+      if (previewRef.current === audio) {
+        console.warn("Voice sample playback failed", error);
+        previewRef.current = null;
+        setPreviewState(null);
+      }
+    });
   }
 
   function handleSubmit() {
     createTopic.mutate(
       { description, level, classId, goalKind, focus, practiceStyle, register, voiceIds },
       { onSuccess: () => {
-        localStorage.setItem(LAST_VOICES_KEY, JSON.stringify(voiceIds));
+        setStoredString(LAST_VOICES_KEY, JSON.stringify(voiceIds));
         router.replace(`/classes/${classId}`);
       } }
     );
@@ -215,29 +234,36 @@ export default function NewTopicPage() {
           ))}
         </div>
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Voices · select one or more. Each sentence keeps its assigned voice.</p>
+          <p className="text-xs text-muted-foreground">Voices · choose one or more. Samples speak the language of this course.</p>
           <div className="grid grid-cols-2 gap-2">
-            {voices.map((voice) => <div key={voice.id} className={`rounded-lg p-2 bg-card ${voiceIds.includes(voice.id) ? "ring-1 ring-primary" : ""}`}>
+            {VOICES.map((voice) => <div key={voice.id} className={`relative rounded-lg bg-card ${voiceIds.includes(voice.id) ? "ring-1 ring-primary" : ""}`}>
               <button type="button" aria-pressed={voiceIds.includes(voice.id)} onClick={() => toggleVoice(voice.id)}
-                className="w-full text-left text-sm"><span aria-hidden="true">{voiceIds.includes(voice.id) ? "✓ " : "+ "}</span>{voice.name}</button>
-              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>{voice.description}</span>
-                <button type="button" onClick={() => playPreview(voice.id)} aria-label={`Play ${voice.name} voice sample`} className="p-1 text-primary">▶</button>
-              </div>
+                className="w-full min-h-18 rounded-lg p-3 pr-12 text-left hover:bg-primary/5 transition-colors">
+                <span className="flex items-center gap-1.5 text-sm">{voice.name}{voiceIds.includes(voice.id) && <Check aria-hidden="true" className="h-3.5 w-3.5 text-primary" />}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {previewState?.id === voice.id ? previewState.status === "loading" ? "Loading sample…" : "Playing sample" : voice.description}
+                </span>
+              </button>
+              <button type="button" onClick={() => playPreview(voice.id)}
+                disabled={previewState?.id === voice.id && previewState.status === "loading"}
+                aria-label={`${previewState?.id === voice.id ? previewState.status === "loading" ? "Loading" : "Stop" : "Play"} ${voice.name} voice sample`}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary disabled:opacity-70">
+                {previewState?.id === voice.id && previewState.status === "loading" ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : previewState?.id === voice.id && previewState.status === "playing" ? <Pause className="h-4 w-4" />
+                  : <Volume2 className="h-4 w-4" />}
+              </button>
             </div>)}
           </div>
-          {voicesError && <p role="alert" className="text-xs text-destructive">{voicesError}</p>}
         </div>
-        {createTopic.error && <p role="alert" className="text-sm text-destructive">{createTopic.error.message}</p>}
       </div>
 
       <FloatingBar>
         <ActionButton
           onClick={handleSubmit}
-          disabled={createTopic.isPending || !description.trim() || (goalKind !== "situation" && !focus.trim()) || voiceIds.length === 0 || voices.length === 0}
+          disabled={createTopic.isPending || !description.trim() || (goalKind !== "situation" && !focus.trim()) || voiceIds.length === 0}
           icon={createTopic.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
         >
-          {createTopic.isPending ? "Generating..." : "Create topic"}
+          {createTopic.isPending ? "Generating..." : createTopic.isError ? "Try again" : "Create topic"}
         </ActionButton>
       </FloatingBar>
     </div>

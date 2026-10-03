@@ -1,14 +1,6 @@
 import { randomInt } from "node:crypto";
-
-// A small, varied selection of voices accessible in this ElevenLabs workspace.
-export const VOICES = [
-  { id: "UQoLnPXvf18gaKpLzfb8", name: "Robert", description: "Calm · American", gender: "male" },
-  { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah", description: "Warm · American", gender: "female" },
-  { id: "JBFqnCBsd6RMkjVDRZzb", name: "George", description: "Storyteller · British", gender: "male" },
-  { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica", description: "Bright · American", gender: "female" },
-  { id: "Xb7hH8MSUJpSbSDYk0k2", name: "Alice", description: "Clear · British", gender: "female" },
-  { id: "bIHbv24MWmeRgasZH58o", name: "Will", description: "Relaxed · American", gender: "male" },
-] as const;
+import { VOICES } from "./voice-catalog";
+export { VOICES } from "./voice-catalog";
 
 export const DEFAULT_VOICE_ID = VOICES[0].id;
 const allowed = new Set<string>(VOICES.map((voice) => voice.id));

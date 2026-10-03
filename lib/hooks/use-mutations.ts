@@ -134,6 +134,7 @@ export function useCreateTopic() {
         topicId: s.topicId,
         sourceText: s.sourceText,
         targetText: s.targetText,
+        voiceId: s.voiceId,
         createdAt: typeof s.createdAt === "string"
           ? s.createdAt
           : new Date(s.createdAt).toISOString(),
@@ -180,6 +181,7 @@ export function useGenerateSentences() {
         topicId: s.topicId,
         sourceText: s.sourceText,
         targetText: s.targetText,
+        voiceId: s.voiceId,
         createdAt: typeof s.createdAt === "string"
           ? s.createdAt
           : new Date(s.createdAt).toISOString(),

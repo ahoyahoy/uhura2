@@ -16,6 +16,7 @@ import { ActionButton } from "@/components/action-button";
 import { useSentencesDue } from "@/lib/hooks/use-sentences-due";
 import { useRateSentence } from "@/lib/hooks/use-mutations";
 import { useStoredString } from "@/lib/hooks/use-stored-string";
+import { voiceVolume } from "@/lib/voice-volume";
 
 export default function LearnPageWrapper() {
   return (
@@ -68,6 +69,8 @@ function LearnPage() {
 
   const engineRef = useRef(new SessionEngine());
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRequestRef = useRef(0);
+  const answerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
   const gradeStyle = useStoredString("gradeStyle", "numbers");
 
@@ -76,10 +79,9 @@ function LearnPage() {
   const [initialCount, setInitialCount] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [playingTts, setPlayingTts] = useState<false | "normal" | "slow">(false);
+  const [playingTts, setPlayingTts] = useState<false | "loading" | "normal" | "slow">(false);
   const [ttsDuration, setTtsDuration] = useState(0);
   const [ttsKey, setTtsKey] = useState(0);
-  const [ttsError, setTtsError] = useState<string | null>(null);
 
   const { sentences: dueSentences, isLoading: syncLoading } = useSentencesDue(topicIds);
   const rateMutation = useRateSentence();
@@ -99,37 +101,50 @@ function LearnPage() {
 
   // Use a persistent audio element for mobile compatibility
   useEffect(() => {
+    const requestCounter = audioRequestRef;
     if (!audioRef.current) {
       audioRef.current = new Audio();
     }
     return () => {
+      requestCounter.current++;
+      if (answerTimerRef.current) clearTimeout(answerTimerRef.current);
       audioRef.current?.pause();
     };
   }, []);
 
   const ttsSlowRef = useRef(false);
 
-  async function playTts(sentenceId: string) {
+  async function playTts(sentenceId: string, voiceId?: string | null) {
     const audio = audioRef.current!;
     const slow = ttsSlowRef.current;
+    const request = ++audioRequestRef.current;
 
-    setPlayingTts(slow ? "slow" : "normal");
-    setTtsError(null);
+    audio.pause();
+    setPlayingTts("loading");
     try {
       const url = await getAudioUrl(sentenceId);
-      audio.pause();
+      if (request !== audioRequestRef.current) return;
       audio.currentTime = 0;
       audio.onended = () => setPlayingTts(false);
-      audio.onerror = () => setPlayingTts(false);
       audio.src = url;
-      await new Promise<void>((res) => { audio.onloadedmetadata = () => res(); audio.load(); });
+      await new Promise<void>((resolve, reject) => {
+        audio.onloadedmetadata = () => resolve();
+        audio.onerror = () => reject(new Error("Audio could not be played"));
+        audio.load();
+      });
+      if (request !== audioRequestRef.current) return;
       audio.playbackRate = slow ? 0.75 : 1;
+      audio.volume = voiceVolume(voiceId);
       setTtsDuration(audio.duration / audio.playbackRate);
       setTtsKey((k) => k + 1);
-      await audio.play().catch(() => setPlayingTts(false));
+      await audio.play();
+      if (request !== audioRequestRef.current) { audio.pause(); return; }
+      setPlayingTts(slow ? "slow" : "normal");
     } catch (error) {
-      setPlayingTts(false);
-      setTtsError(error instanceof Error ? error.message : "Audio unavailable");
+      if (request === audioRequestRef.current) {
+        console.warn("Sentence audio playback failed", error);
+        setPlayingTts(false);
+      }
     }
   }
 
@@ -148,6 +163,10 @@ function LearnPage() {
     setShowAnswer(false);
     setRemaining(engine.remaining);
     ttsSlowRef.current = false;
+    audioRequestRef.current++;
+    if (answerTimerRef.current) clearTimeout(answerTimerRef.current);
+    audioRef.current?.pause();
+    setPlayingTts(false);
 
     // Pick next from pool - delay content swap to halfway through flip animation
     const next = engine.getNext();
@@ -223,7 +242,7 @@ function LearnPage() {
             variant="soft"
             onClick={() => {
               setShowAnswer(true);
-              setTimeout(() => playTts(current.id), 200);
+              answerTimerRef.current = setTimeout(() => playTts(current.id, current.voiceId), 200);
             }}
             icon={<ArrowRight className="h-5 w-5" />}
           >
@@ -234,18 +253,18 @@ function LearnPage() {
             <div className="flex justify-center">
               <button
                 aria-label="Play sentence audio"
+                disabled={playingTts === "loading"}
                 className={`relative overflow-hidden flex items-center justify-center h-7 px-12 rounded-full cursor-pointer transition-colors ${
                   playingTts
                     ? "bg-primary/20 text-primary"
                     : "bg-primary/10 text-muted-foreground hover:bg-primary/15"
                 }`}
-                onClick={() => { ttsSlowRef.current = false; playTts(current.id); }}
+                onClick={() => { ttsSlowRef.current = false; playTts(current.id, current.voiceId); }}
               >
-                {playingTts && <AudioProgress key={ttsKey} duration={ttsDuration} />}
-                <Volume2 className="h-3.5 w-3.5 relative z-10" />
+                {playingTts && playingTts !== "loading" && <AudioProgress key={ttsKey} duration={ttsDuration} />}
+                {playingTts === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin relative z-10" /> : <Volume2 className="h-3.5 w-3.5 relative z-10" />}
               </button>
             </div>
-            {ttsError && <p role="alert" className="text-center text-xs text-destructive">{ttsError}</p>}
             <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14">
               {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
                 <button
