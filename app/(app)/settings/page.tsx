@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { ArrowLeft, LogOut } from "lucide-react";
 import Link from "next/link";
@@ -18,8 +19,13 @@ const GRADE_STYLES = [
   { value: "letters", label: "A – E" },
 ] as const;
 
+const subscribe = () => () => {};
+const mountedOnClient = () => true;
+const renderingOnServer = () => false;
+
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(subscribe, mountedOnClient, renderingOnServer);
   const gradeStyle = useStoredString("gradeStyle", "numbers");
 
   function handleGradeStyle(value: string) {
@@ -52,8 +58,9 @@ export default function SettingsPage() {
             {THEMES.map((t) => (
               <button
                 key={t.value}
+                aria-pressed={mounted && theme === t.value}
                 className={`flex-1 px-4 py-3 text-sm rounded-lg cursor-pointer transition-colors ${
-                  theme === t.value
+                  mounted && theme === t.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-card hover:bg-primary/10"
                 }`}

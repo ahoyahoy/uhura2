@@ -122,58 +122,88 @@
 }
 
 .oled {
-  --main: #0029FF;
+  color-scheme: dark;
+  --main: #8298E8;
   --main-bg: #000000;
   --background: #000000;
-  --foreground: #E8EAED;
-  --card: transparent;
-  --card-foreground: #E8EAED;
+  --foreground: #D6D9E1;
+  --card: #090B10;
+  --card-foreground: #D6D9E1;
   --popover: #000000;
-  --popover-foreground: #E8EAED;
-  --primary: #0029FF;
-  --primary-foreground: #ffffff;
-  --secondary: transparent;
-  --secondary-foreground: #E8EAED;
-  --muted: transparent;
-  --muted-foreground: #8B90A0;
-  --accent: transparent;
-  --accent-foreground: #E8EAED;
+  --popover-foreground: #D6D9E1;
+  --primary: #8298E8;
+  --primary-foreground: #D6D9E1;
+  --secondary: #090B10;
+  --secondary-foreground: #D6D9E1;
+  --muted: #090B10;
+  --muted-foreground: #9299A8;
+  --accent: #101521;
+  --accent-foreground: #D6D9E1;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: rgba(255, 255, 255, 0.2);
-  --input: rgba(255, 255, 255, 0.15);
-  --ring: #0029FF;
+  --border: #555E71;
+  --input: #555E71;
+  --ring: #8298E8;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --sidebar: #000000;
-  --sidebar-foreground: #E8EAED;
-  --sidebar-primary: #0029FF;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: transparent;
-  --sidebar-accent-foreground: #E8EAED;
-  --sidebar-border: rgba(255, 255, 255, 0.2);
-  --sidebar-ring: #0029FF;
+  --sidebar-foreground: #D6D9E1;
+  --sidebar-primary: #8298E8;
+  --sidebar-primary-foreground: #D6D9E1;
+  --sidebar-accent: #101521;
+  --sidebar-accent-foreground: #D6D9E1;
+  --sidebar-border: #555E71;
+  --sidebar-ring: #8298E8;
 }
 
-/* OLED: outlined surfaces instead of filled */
+/* OLED keeps most pixels dark; blue marks an edge, while text stays neutral. */
 .oled .bg-card {
-  background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+}
+.oled .bg-card\/90 {
+  border: 1px solid var(--border);
+}
+.oled .bg-primary {
+  background-color: #101629;
+  border: 1px solid var(--primary);
+  color: var(--foreground);
 }
 .oled .bg-primary\/10,
 .oled .bg-primary\/15,
 .oled .bg-primary\/20 {
-  background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #090B10;
+  border: 1px solid var(--border);
+}
+.oled .bg-primary\/20 {
+  background-color: #101629;
+  border-color: var(--primary);
+}
+.oled .text-primary {
+  color: var(--foreground);
+}
+.oled .text-muted-foreground\/40 {
+  color: #747B89;
+}
+.oled .text-foreground\/30 {
+  color: var(--muted-foreground);
+}
+.oled .ring-primary {
+  background-color: #101629;
 }
 .oled .hover\:bg-primary\/10:hover,
-.oled .hover\:bg-primary\/15:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.oled .hover\:bg-primary\/15:hover,
+.oled .hover\:bg-primary\/90:hover {
+  background-color: #172039;
 }
 .oled .topic-selected {
-  background-color: rgba(0, 41, 255, 0.15);
+  background-color: #101629;
+  border: 1px solid var(--primary);
+}
+.oled .animate-audio-progress {
+  background-color: rgba(130, 152, 232, 0.2);
   border: 0;
 }
 
