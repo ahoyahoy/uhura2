@@ -140,12 +140,18 @@ export default function NewTopicPage() {
 
   return (
     <div className="flex flex-col items-stretch min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
-      <Link
-        href={`/classes/${classId}`}
-        className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </Link>
+      <div className="fixed inset-x-0 top-0 z-30 pointer-events-none">
+        <div className="w-full max-w-2xl mx-auto px-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <Link
+            href={`/classes/${classId}`}
+            aria-label="Back to course"
+            className="pointer-events-auto inline-flex items-center justify-center h-9 w-9 rounded-full bg-card/90 text-primary shadow-sm backdrop-blur-sm hover:bg-card transition-transform duration-200 active:translate-y-0.5 active:duration-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+      <div className="h-9" aria-hidden="true" />
 
       <h1 className="mt-auto mb-12 text-4xl font-normal">New Topic</h1>
 
