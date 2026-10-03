@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
 import { useSync } from "@/lib/hooks/use-sync";
-import { useSession } from "@/lib/auth-client";
 import { getLanguageLabel } from "@/lib/languages";
 import { useStoredString } from "@/lib/hooks/use-stored-string";
 import { getGreeting } from "@/lib/greetings";
@@ -11,7 +10,6 @@ import Link from "next/link";
 
 export default function HomePage() {
   const { data, isLoading } = useSync();
-  const { data: session } = useSession();
   const classId = useStoredString("lastClassId", null);
 
   const cls = data?.classes.find((c) => c.id === classId) ?? data?.classes[0];
@@ -34,19 +32,7 @@ export default function HomePage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-normal text-muted-foreground">{greeting}</h1>
-          <Link
-            href="/settings"
-            className="h-9 w-9 rounded-full overflow-hidden bg-primary/10 block"
-          >
-            {session?.user?.image && (
-              <img
-                src={session.user.image}
-                alt=""
-                className="h-9 w-9"
-                referrerPolicy="no-referrer"
-              />
-            )}
-          </Link>
+          <div className="h-9 w-9 shrink-0" aria-hidden="true" />
         </div>
         {cls && (
           <Link
