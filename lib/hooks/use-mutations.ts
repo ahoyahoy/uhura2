@@ -3,6 +3,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { idb } from "@/lib/idb";
 import type { SyncData } from "./use-sync";
+import type { IDBTopic, IDBSentence } from "@/lib/idb";
+
+type ApiTopic = Omit<IDBTopic, "createdAt"> & { createdAt: string | Date };
+type ApiSentence = Omit<IDBSentence, "createdAt"> & { createdAt: string | Date };
+type CreateTopicResponse = { topic: ApiTopic; sentences: ApiSentence[] };
+type GenerateResponse = { sentences: ApiSentence[] };
 
 // ─── Rate Sentence ───────────────────────────────────────────────
 
@@ -94,14 +100,17 @@ export function useCreateTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (body: { description: string; level: string; classId: string }) => {
+    mutationFn: async (body: { description: string; level: string; classId: string; goalKind: string; focus: string; practiceStyle: string; register: string; voiceIds: string[] }) => {
       const res = await fetch("/api/topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Create topic failed");
-      return res.json();
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Create topic failed");
+      }
+      return res.json() as Promise<CreateTopicResponse>;
     },
     onSuccess: (data) => {
       const topicEntry = {
@@ -110,12 +119,17 @@ export function useCreateTopic() {
         title: data.topic.title,
         description: data.topic.description,
         level: data.topic.level,
+        goalKind: data.topic.goalKind,
+        focus: data.topic.focus,
+        practiceStyle: data.topic.practiceStyle,
+        register: data.topic.register,
+        voiceIds: data.topic.voiceIds,
         createdAt: typeof data.topic.createdAt === "string"
           ? data.topic.createdAt
           : new Date(data.topic.createdAt).toISOString(),
       };
 
-      const sentenceEntries = (data.sentences ?? []).map((s: any) => ({
+      const sentenceEntries = data.sentences.map((s) => ({
         id: s.id,
         topicId: s.topicId,
         sourceText: s.sourceText,
@@ -154,11 +168,14 @@ export function useGenerateSentences() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topicId }),
       });
-      if (!res.ok) throw new Error("Generate failed");
-      return res.json();
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Generate failed");
+      }
+      return res.json() as Promise<GenerateResponse>;
     },
     onSuccess: (data) => {
-      const sentenceEntries = (data.sentences ?? []).map((s: any) => ({
+      const sentenceEntries = data.sentences.map((s) => ({
         id: s.id,
         topicId: s.topicId,
         sourceText: s.sourceText,

@@ -34,6 +34,11 @@ export async function GET() {
         title: topic.title,
         description: topic.description,
         level: topic.level,
+        goalKind: topic.goalKind,
+        focus: topic.focus,
+        practiceStyle: topic.practiceStyle,
+        register: topic.register,
+        voiceIds: topic.voiceIds,
         createdAt: topic.createdAt,
         deletedAt: topic.deletedAt,
       })

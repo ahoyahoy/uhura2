@@ -13,6 +13,11 @@ export interface IDBTopic {
   title: string;
   description: string;
   level: string;
+  goalKind?: string;
+  focus?: string;
+  practiceStyle?: string;
+  register?: string;
+  voiceIds?: string[];
   createdAt: string;
 }
 

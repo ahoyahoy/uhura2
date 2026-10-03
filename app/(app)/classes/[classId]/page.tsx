@@ -3,26 +3,21 @@
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowLeft, Loader2 } from "lucide-react";
 import { TopicsList } from "@/components/topics-list";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
-import { getLanguageLabel, getLanguageFlag } from "@/lib/languages";
-import { useSync } from "@/lib/hooks/use-sync";
 import { useTopicsWithCounts } from "@/lib/hooks/use-topics-with-counts";
+import { setStoredString } from "@/lib/hooks/use-stored-string";
 
 export default function ClassTopicsPage() {
   const { classId } = useParams<{ classId: string }>();
-  const { data, isLoading } = useSync();
-  const { topicsWithCounts } = useTopicsWithCounts(classId);
+  const { topicsWithCounts, isLoading } = useTopicsWithCounts(classId);
 
   // Remember last visited course
   useEffect(() => {
-    localStorage.setItem("lastClassId", classId);
+    setStoredString("lastClassId", classId);
   }, [classId]);
-
-  const cls = data?.classes.find((c) => c.id === classId);
 
   if (isLoading) {
     return (

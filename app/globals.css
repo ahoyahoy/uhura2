@@ -172,6 +172,10 @@
 .oled .hover\:bg-primary\/15:hover {
   background-color: rgba(255, 255, 255, 0.05);
 }
+.oled .topic-selected {
+  background-color: rgba(0, 41, 255, 0.15);
+  border: 0;
+}
 
 @layer base {
   * {

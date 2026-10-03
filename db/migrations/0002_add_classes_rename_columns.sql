@@ -6,10 +6,13 @@ CREATE TABLE IF NOT EXISTS "language_class" (
   "target_language" text NOT NULL,
   "created_at" timestamp DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
 
 -- Add class_id to topic
 ALTER TABLE "topic" ADD COLUMN IF NOT EXISTS "class_id" uuid REFERENCES "language_class"("id") ON DELETE CASCADE;
+--> statement-breakpoint
 
 -- Rename sentence columns
 ALTER TABLE "sentence" RENAME COLUMN "cz" TO "source_text";
+--> statement-breakpoint
 ALTER TABLE "sentence" RENAME COLUMN "en" TO "target_text";

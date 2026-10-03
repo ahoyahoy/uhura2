@@ -9,6 +9,11 @@ export type TopicWithCounts = {
   title: string;
   description: string;
   level: string;
+  goalKind?: string;
+  focus?: string;
+  practiceStyle?: string;
+  register?: string;
+  voiceIds?: string[];
   createdAt: string;
   totalSentences: number;
   dueSentences: number;

@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Uhura
 
-## Getting Started
+Uhura is a language practice app built with Next.js, Better Auth, Neon/Drizzle, OpenAI and ElevenLabs. The production app is [uhura2.vercel.app](https://uhura2.vercel.app).
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Install dependencies with `pnpm install`, configure `.env.local`, then run `pnpm dev`. The app uses [localhost:3017](http://localhost:3017) for both `dev` and `start`, so it does not collide with projects on port 3000. For Google login, use `BETTER_AUTH_URL=http://localhost:3017` and `NEXT_PUBLIC_APP_URL=http://localhost:3017`; the OAuth client's redirect URI must include `http://localhost:3017/api/auth/callback/google`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Do not commit `.env.local`. The server needs the configured database, auth, OpenAI, and ElevenLabs environment variables. Run `pnpm exec drizzle-kit migrate` when applying the checked-in migrations to a fresh database.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Lessons and audio
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Lesson creation stores the learning goal, focus, practice style, register, and a selection of up to six curated voices. The selected voices are remembered in this browser for the next lesson. The backend assigns one voice to each sentence, avoiding the immediately previous voice when possible. Adding sentences keeps the same lesson goal and sends the existing sentence pairs to the generator; the server filters duplicates and runs a bounded teacher review. Generated pairs can be reviewed and edited before practice.
 
-## Learn More
+The browser requests speech with a sentence ID only. The server checks ownership, loads text and voice, calls ElevenLabs Turbo v4, and stores the audio in the database with a key based on model, language, voice and text. Cached audio is reused indefinitely; editing a sentence creates a new cache key. Uncached speech is limited to 10,000 input characters per UTC day across the app.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [sentence generation design](docs/SENTENCE-GENERATION-DESIGN.md) and [Turbo trial](docs/TTS-TURBO-TRIAL.md) for the reasoning and evaluation limits.

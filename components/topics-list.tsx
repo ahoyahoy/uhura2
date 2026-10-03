@@ -14,6 +14,11 @@ type TopicWithCounts = {
   title: string;
   description: string;
   level: string;
+  goalKind?: string;
+  focus?: string;
+  practiceStyle?: string;
+  register?: string;
+  voiceIds?: string[];
   totalSentences: number;
   dueSentences: number;
 };
@@ -51,9 +56,8 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
   }
 
   function generateForSelected() {
-    for (const id of selected) {
-      generateMutation.mutate(id);
-    }
+    if (selected.size !== 1) return;
+    generateMutation.mutate([...selected][0]);
   }
 
   function deleteSelected() {
@@ -76,13 +80,16 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             key={t.id}
             className={`flex items-center gap-3 px-8 py-3 cursor-pointer transition-colors ${
               selected.has(t.id)
-                ? "bg-primary/10 text-primary"
+                ? "bg-primary/10 text-primary topic-selected"
                 : "hover:bg-primary/5"
             }`}
             onClick={() => toggleSelect(t.id)}
           >
-            <span className="flex-1 truncate">
-              {t.title} <span className="text-xs text-muted-foreground font-normal">{t.level}</span>
+            <span className="flex-1 min-w-0">
+              <span className="block truncate">{t.title} <span className="text-xs text-muted-foreground font-normal">{t.level}</span></span>
+              {t.focus && <span className="block truncate text-xs text-muted-foreground font-normal">
+                {t.focus} · {t.practiceStyle === "fixed" ? "Fixed pattern" : t.practiceStyle === "situational" ? "In context" : "Varied use"}
+              </span>}
             </span>
             {generateMutation.isPending && generateMutation.variables === t.id && (
               <BrailleSpinner />
@@ -112,10 +119,12 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
       {selected.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-10">
           <div className="flex items-center gap-3 text-xs text-muted-foreground bg-primary/10 rounded-full px-4 py-1.5">
+            {selected.size === 1 && <><Link href={`/classes/${classId}/topics/${[...selected][0]}`} className="hover:text-foreground/70">Review sentences</Link><span>·</span></>}
             <button
               className="cursor-pointer hover:text-foreground/70 transition-colors"
               onClick={generateForSelected}
-              disabled={generateMutation.isPending}
+              disabled={generateMutation.isPending || selected.size !== 1}
+              title={selected.size !== 1 ? "Select one lesson to add sentences" : undefined}
             >
               {generateMutation.isPending ? "Generating..." : "Generate more"}
             </button>
@@ -128,6 +137,8 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
               Remove
             </button>
           </div>
+          {generateMutation.isError && <p role="alert" className="absolute top-9 text-xs text-destructive text-center px-4">{generateMutation.error.message}</p>}
+          {generateMutation.isSuccess && <p role="status" className="absolute top-9 text-xs text-muted-foreground">Added {generateMutation.data.sentences.length} sentences</p>}
         </div>
       )}
     </>

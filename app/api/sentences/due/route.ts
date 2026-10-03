@@ -59,9 +59,10 @@ export async function GET(req: NextRequest) {
         : null,
   }));
 
-  const sentences = weightedShuffle(mapped).map(
-    ({ lastReviewedAt, level, ...rest }) => rest
-  );
+  const sentences = weightedShuffle(mapped).map((item) => ({
+    id: item.id, sourceText: item.sourceText, targetText: item.targetText,
+    topicTitle: item.topicTitle, progress: item.progress,
+  }));
 
   return NextResponse.json({ sentences }, {
     headers: { "Cache-Control": "no-store" },

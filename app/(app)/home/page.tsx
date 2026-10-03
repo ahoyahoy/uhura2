@@ -1,23 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
 import { useSync } from "@/lib/hooks/use-sync";
 import { useSession } from "@/lib/auth-client";
-import { getLanguageFlag, getLanguageLabel } from "@/lib/languages";
+import { getLanguageLabel } from "@/lib/languages";
+import { useStoredString } from "@/lib/hooks/use-stored-string";
 import { getGreeting } from "@/lib/greetings";
 import Link from "next/link";
 
 export default function HomePage() {
-  const router = useRouter();
   const { data, isLoading } = useSync();
   const { data: session } = useSession();
-  const [classId, setClassId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setClassId(localStorage.getItem("lastClassId"));
-  }, []);
+  const classId = useStoredString("lastClassId", null);
 
   const cls = data?.classes.find((c) => c.id === classId) ?? data?.classes[0];
 

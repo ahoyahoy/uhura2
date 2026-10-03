@@ -6,7 +6,9 @@ import {
   integer,
   uuid,
   customType,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 const bytea = customType<{ data: Buffer }>({
   dataType() {
@@ -88,6 +90,11 @@ export const topic = pgTable("topic", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   level: text("level").default("B1").notNull(),
+  goalKind: text("goal_kind").default("situation").notNull(),
+  focus: text("focus").default("").notNull(),
+  practiceStyle: text("practice_style").default("varied").notNull(),
+  register: text("register").default("neutral_spoken").notNull(),
+  voiceIds: text("voice_ids").array().default(sql`ARRAY['UQoLnPXvf18gaKpLzfb8']::text[]`).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at"),
 });
@@ -99,8 +106,10 @@ export const sentence = pgTable("sentence", {
     .references(() => topic.id, { onDelete: "cascade" }),
   sourceText: text("source_text").notNull(),
   targetText: text("target_text").notNull(),
+  voiceId: text("voice_id"),
+  position: integer("position").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [uniqueIndex("sentence_topic_position_unique").on(table.topicId, table.position)]);
 
 export const sentenceProgress = pgTable("sentence_progress", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -122,4 +131,22 @@ export const ttsCache = pgTable("tts_cache", {
   textHash: text("text_hash").notNull().unique(),
   audio: bytea("audio").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ttsGeneration = pgTable("tts_generation", {
+  cacheKey: text("cache_key").primaryKey(),
+  status: text("status").default("generating").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const topicGeneration = pgTable("topic_generation", {
+  topicId: uuid("topic_id").primaryKey().references(() => topic.id, { onDelete: "cascade" }),
+  status: text("status").default("generating").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const ttsDailyBudget = pgTable("tts_daily_budget", {
+  day: text("day").primaryKey(),
+  characters: integer("characters").default(0).notNull(),
 });

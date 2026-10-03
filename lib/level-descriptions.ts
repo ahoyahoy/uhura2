@@ -1,10 +1,10 @@
 const LEVEL_DESCRIPTIONS: Record<string, string> = {
-  A1: "- Use only present simple, basic vocabulary (100-500 words), very short sentences (3-6 words)",
-  A2: "- Use present simple/continuous, past simple, basic connectors, simple everyday vocabulary",
-  B1: "- Use past tenses, present perfect, conditionals (first), relative clauses, moderate vocabulary",
-  B2: "- Use all tenses, passive voice, reported speech, conditionals (second/third), idiomatic expressions",
-  C1: "- Use complex structures, subjunctive, inversions, advanced idioms, nuanced vocabulary",
-  C2: "- Use sophisticated language, rare idioms, literary expressions, subtle nuances, near-native complexity",
+  A1: "Short, useful utterances about familiar concrete situations with common vocabulary.",
+  A2: "Straightforward everyday situations, common phrases and clear context.",
+  B1: "Natural everyday language for explaining plans, experiences and reasons when relevant to the goal.",
+  B2: "Flexible everyday language with some nuance; avoid needless complexity.",
+  C1: "Precise meaning, natural collocations and register appropriate to the situation, including ordinary spoken language.",
+  C2: "Fine shades of meaning and register when useful; do not force literary style or rare grammar.",
 };
 
 export function getLevelDescription(level: string): string {

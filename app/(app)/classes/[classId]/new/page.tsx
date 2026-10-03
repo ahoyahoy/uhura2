@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Loader2, ChevronDown } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +10,26 @@ import { ActionButton } from "@/components/action-button";
 import { useScreenBg } from "@/lib/hooks/use-screen-bg";
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const GOALS = [
+  { id: "situation", label: "Situation" },
+  { id: "vocabulary", label: "Word / phrase" },
+  { id: "grammar", label: "Grammar" },
+  { id: "contrast", label: "Compare" },
+];
+const STYLES = [
+  { id: "fixed", label: "Fixed pattern" },
+  { id: "varied", label: "Varied use" },
+  { id: "situational", label: "In context" },
+];
+const REGISTERS = [
+  { id: "neutral_spoken", label: "Everyday" },
+  { id: "informal", label: "Casual" },
+  { id: "work_polite", label: "Polite work" },
+  { id: "formal_written", label: "Formal writing" },
+];
+type VoiceOption = { id: string; name: string; description: string; gender: string };
+const DEFAULT_VOICES = ["UQoLnPXvf18gaKpLzfb8", "EXAVITQu4vr4xnSDxMaL", "JBFqnCBsd6RMkjVDRZzb"];
+const LAST_VOICES_KEY = "uhura:lastVoiceIds";
 
 const TEMPLATES = [
   { label: "Introducing yourself", prompt: "Introducing myself — name, age, where I'm from, what I do for a living, my family, basic personal info." },
@@ -38,14 +58,60 @@ export default function NewTopicPage() {
   const { classId } = useParams<{ classId: string }>();
   const [description, setDescription] = useState("");
   const [level, setLevel] = useState("B1");
+  const [goalKind, setGoalKind] = useState("situation");
+  const [focus, setFocus] = useState("");
+  const [practiceStyle, setPracticeStyle] = useState("varied");
+  const [register, setRegister] = useState("neutral_spoken");
+  const [voiceIds, setVoiceIds] = useState<string[]>(DEFAULT_VOICES);
+  const [voices, setVoices] = useState<VoiceOption[]>([]);
+  const [voicesError, setVoicesError] = useState<string | null>(null);
+  const previewRef = useRef<HTMLAudioElement | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
 
   const createTopic = useCreateTopic();
 
-  async function handleSubmit() {
+  useEffect(() => {
+    let active = true;
+    fetch("/api/voices").then(async (res) => {
+      if (!res.ok) throw new Error("Voices are temporarily unavailable");
+      return res.json();
+    }).then((data: { voices: VoiceOption[] }) => {
+      if (!active) return;
+      setVoices(data.voices);
+      const available = new Set(data.voices.map((voice) => voice.id));
+      let remembered: unknown = null;
+      try { remembered = JSON.parse(localStorage.getItem(LAST_VOICES_KEY) ?? "null"); } catch { /* use defaults */ }
+      setVoiceIds((selected) => {
+        if (Array.isArray(remembered)) selected = remembered.filter((id): id is string => typeof id === "string");
+        const valid = selected.filter((id) => available.has(id));
+        return valid.length ? valid : DEFAULT_VOICES.filter((id) => available.has(id)).length
+          ? DEFAULT_VOICES.filter((id) => available.has(id))
+          : data.voices.slice(0, 1).map((voice) => voice.id);
+      });
+    }).catch((error) => { if (active) setVoicesError(error.message); });
+    return () => { active = false; previewRef.current?.pause(); };
+  }, []);
+
+  function toggleVoice(id: string) {
+    setVoiceIds((selected) => selected.includes(id)
+      ? selected.length > 1 ? selected.filter((value) => value !== id) : selected
+      : [...selected, id]);
+  }
+
+  function playPreview(id: string) {
+    previewRef.current?.pause();
+    const audio = new Audio(`/api/voices/preview?voiceId=${encodeURIComponent(id)}`);
+    previewRef.current = audio;
+    audio.play().catch(() => setVoicesError("Could not play this voice sample"));
+  }
+
+  function handleSubmit() {
     createTopic.mutate(
-      { description, level, classId },
-      { onSuccess: () => router.replace(`/classes/${classId}`) }
+      { description, level, classId, goalKind, focus, practiceStyle, register, voiceIds },
+      { onSuccess: () => {
+        localStorage.setItem(LAST_VOICES_KEY, JSON.stringify(voiceIds));
+        router.replace(`/classes/${classId}`);
+      } }
     );
   }
 
@@ -104,6 +170,34 @@ export default function NewTopicPage() {
           }}
           rows={3}
         />
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">What should these sentences teach?</p>
+          <div className="flex flex-wrap gap-2">
+            {GOALS.map((goal) => <button key={goal.id} type="button" aria-pressed={goalKind === goal.id}
+              className={`rounded-full px-3 py-1.5 text-xs ${goalKind === goal.id ? "bg-primary text-primary-foreground" : "bg-card"}`}
+              onClick={() => setGoalKind(goal.id)}>{goal.label}</button>)}
+          </div>
+          {goalKind !== "situation" && <input value={focus} onChange={(event) => setFocus(event.target.value)}
+            className="w-full rounded-lg bg-card px-4 py-3 text-sm" maxLength={200}
+            placeholder={goalKind === "vocabulary" ? "e.g. borrow — take and return later" : goalKind === "contrast" ? "e.g. borrow vs lend" : "e.g. used to — past habits"}
+            aria-label="Learning focus" />}
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Practice style</p>
+          <div className="flex flex-wrap gap-2">
+            {STYLES.map((style) => <button key={style.id} type="button" aria-pressed={practiceStyle === style.id}
+              className={`rounded-full px-3 py-1.5 text-xs ${practiceStyle === style.id ? "bg-primary text-primary-foreground" : "bg-card"}`}
+              onClick={() => setPracticeStyle(style.id)}>{style.label}</button>)}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Tone</p>
+          <div className="flex flex-wrap gap-2">
+            {REGISTERS.map((item) => <button key={item.id} type="button" aria-pressed={register === item.id}
+              className={`rounded-full px-3 py-1.5 text-xs ${register === item.id ? "bg-primary text-primary-foreground" : "bg-card"}`}
+              onClick={() => setRegister(item.id)}>{item.label}</button>)}
+          </div>
+        </div>
         <div className="flex justify-center gap-2">
           {LEVELS.map((l) => (
             <button
@@ -120,12 +214,27 @@ export default function NewTopicPage() {
             </button>
           ))}
         </div>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Voices · select one or more. Each sentence keeps its assigned voice.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {voices.map((voice) => <div key={voice.id} className={`rounded-lg p-2 bg-card ${voiceIds.includes(voice.id) ? "ring-1 ring-primary" : ""}`}>
+              <button type="button" aria-pressed={voiceIds.includes(voice.id)} onClick={() => toggleVoice(voice.id)}
+                className="w-full text-left text-sm"><span aria-hidden="true">{voiceIds.includes(voice.id) ? "✓ " : "+ "}</span>{voice.name}</button>
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{voice.description}</span>
+                <button type="button" onClick={() => playPreview(voice.id)} aria-label={`Play ${voice.name} voice sample`} className="p-1 text-primary">▶</button>
+              </div>
+            </div>)}
+          </div>
+          {voicesError && <p role="alert" className="text-xs text-destructive">{voicesError}</p>}
+        </div>
+        {createTopic.error && <p role="alert" className="text-sm text-destructive">{createTopic.error.message}</p>}
       </div>
 
       <FloatingBar>
         <ActionButton
           onClick={handleSubmit}
-          disabled={createTopic.isPending || !description.trim()}
+          disabled={createTopic.isPending || !description.trim() || (goalKind !== "situation" && !focus.trim()) || voiceIds.length === 0 || voices.length === 0}
           icon={createTopic.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
         >
           {createTopic.isPending ? "Generating..." : "Create topic"}

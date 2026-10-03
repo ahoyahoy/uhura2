@@ -1,9 +1,8 @@
-import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { topic, sentence, sentenceProgress, ttsCache } from "@/db/schema";
+import { topic, sentence, sentenceProgress } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 
 export async function DELETE(
@@ -40,11 +39,6 @@ export async function DELETE(
       .delete(sentenceProgress)
       .where(inArray(sentenceProgress.sentenceId, sentenceIds));
 
-    // Delete cached audio
-    const hashes = topicSentences.map((s) =>
-      createHash("md5").update(s.targetText).digest("hex")
-    );
-    await db.delete(ttsCache).where(inArray(ttsCache.textHash, hashes));
   }
 
   // Hard delete sentences (progress already deleted above)

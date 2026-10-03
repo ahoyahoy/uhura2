@@ -10,18 +10,29 @@ export type SyncData = {
   progress: IDBProgress[];
 };
 
+type ApiClass = Omit<IDBClass, "createdAt"> & { createdAt: string | number };
+type ApiTopic = Omit<IDBTopic, "createdAt"> & { createdAt: string | number; deletedAt: string | null };
+type ApiSentence = Omit<IDBSentence, "createdAt"> & { createdAt: string | number };
+type ApiProgress = Omit<IDBProgress, "lastReviewedAt" | "nextReviewAt"> & {
+  lastReviewedAt: string | number | null;
+  nextReviewAt: string | number;
+};
+
 function toISOString(val: unknown): string {
   if (typeof val === "string") return val;
   if (val instanceof Date) return val.toISOString();
-  return new Date(val as any).toISOString();
+  if (typeof val === "number") return new Date(val).toISOString();
+  throw new Error("Invalid timestamp from sync API");
 }
 
 async function fetchAndPersist(): Promise<SyncData> {
   const res = await fetch("/api/sync");
   if (!res.ok) throw new Error("Sync failed");
-  const data = await res.json();
+  const data = await res.json() as {
+    classes: ApiClass[]; topics: ApiTopic[]; sentences: ApiSentence[]; progress: ApiProgress[];
+  };
 
-  const classes: IDBClass[] = data.classes.map((c: any) => ({
+  const classes: IDBClass[] = data.classes.map((c) => ({
     id: c.id,
     sourceLanguage: c.sourceLanguage,
     targetLanguage: c.targetLanguage,
@@ -30,17 +41,22 @@ async function fetchAndPersist(): Promise<SyncData> {
 
   // Filter out soft-deleted topics, persist only active
   const liveTopics: IDBTopic[] = data.topics
-    .filter((t: any) => !t.deletedAt)
-    .map((t: any) => ({
+    .filter((t) => !t.deletedAt)
+    .map((t) => ({
       id: t.id,
       classId: t.classId,
       title: t.title,
       description: t.description,
       level: t.level,
+      goalKind: t.goalKind,
+      focus: t.focus,
+      practiceStyle: t.practiceStyle,
+      register: t.register,
+      voiceIds: t.voiceIds,
       createdAt: toISOString(t.createdAt),
     }));
 
-  const sentences: IDBSentence[] = data.sentences.map((s: any) => ({
+  const sentences: IDBSentence[] = data.sentences.map((s) => ({
     id: s.id,
     topicId: s.topicId,
     sourceText: s.sourceText,
@@ -48,7 +64,7 @@ async function fetchAndPersist(): Promise<SyncData> {
     createdAt: toISOString(s.createdAt),
   }));
 
-  const progress: IDBProgress[] = data.progress.map((p: any) => ({
+  const progress: IDBProgress[] = data.progress.map((p) => ({
     sentenceId: p.sentenceId,
     level: p.level,
     lastGrade: p.lastGrade,

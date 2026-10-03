@@ -43,7 +43,10 @@ export function useSentencesDue(topicIds: string[]) {
     const shuffled = weightedShuffle(due);
 
     // Strip fields that SessionEngine doesn't need
-    return shuffled.map(({ lastReviewedAt, level, ...rest }) => rest);
+    return shuffled.map((item) => ({
+      id: item.id, sourceText: item.sourceText, targetText: item.targetText,
+      topicTitle: item.topicTitle, progress: item.progress,
+    }));
   }, [data, topicIds]);
 
   return { sentences, isLoading };

@@ -1,11 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState, useRef, useCallback } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Volume2, Eye, Loader2, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Volume2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   SessionEngine,
@@ -18,6 +15,7 @@ import { useScreenBg } from "@/lib/hooks/use-screen-bg";
 import { ActionButton } from "@/components/action-button";
 import { useSentencesDue } from "@/lib/hooks/use-sentences-due";
 import { useRateSentence } from "@/lib/hooks/use-mutations";
+import { useStoredString } from "@/lib/hooks/use-stored-string";
 
 export default function LearnPageWrapper() {
   return (
@@ -34,14 +32,6 @@ export default function LearnPageWrapper() {
 }
 
 type Grade = 1 | 2 | 3 | 4 | 5;
-
-const GRADE_COLORS: Record<Grade, string> = {
-  1: "bg-green-600 hover:bg-green-700",
-  2: "bg-lime-600 hover:bg-lime-700",
-  3: "bg-yellow-500 hover:bg-yellow-600",
-  4: "bg-orange-500 hover:bg-orange-600",
-  5: "bg-red-500 hover:bg-red-600",
-};
 
 const GRADE_LABELS: Record<Grade, string> = {
   1: "Perfect",
@@ -79,11 +69,7 @@ function LearnPage() {
   const engineRef = useRef(new SessionEngine());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const initializedRef = useRef(false);
-  const [gradeStyle, setGradeStyle] = useState("numbers");
-
-  useEffect(() => {
-    setGradeStyle(localStorage.getItem("gradeStyle") ?? "numbers");
-  }, []);
+  const gradeStyle = useStoredString("gradeStyle", "numbers");
 
   const [current, setCurrent] = useState<SessionSentence | null>(null);
   const [remaining, setRemaining] = useState(0);
@@ -93,6 +79,7 @@ function LearnPage() {
   const [playingTts, setPlayingTts] = useState<false | "normal" | "slow">(false);
   const [ttsDuration, setTtsDuration] = useState(0);
   const [ttsKey, setTtsKey] = useState(0);
+  const [ttsError, setTtsError] = useState<string | null>(null);
 
   const { sentences: dueSentences, isLoading: syncLoading } = useSentencesDue(topicIds);
   const rateMutation = useRateSentence();
@@ -120,22 +107,16 @@ function LearnPage() {
     };
   }, []);
 
-  // Prefetch audio while user reads Czech sentence
-  useEffect(() => {
-    if (current && !showAnswer) {
-      getAudioUrl(current.targetText).catch(() => {});
-    }
-  }, [current, showAnswer]);
-
   const ttsSlowRef = useRef(false);
 
-  async function playTts(text: string) {
+  async function playTts(sentenceId: string) {
     const audio = audioRef.current!;
     const slow = ttsSlowRef.current;
 
     setPlayingTts(slow ? "slow" : "normal");
+    setTtsError(null);
     try {
-      const url = await getAudioUrl(text);
+      const url = await getAudioUrl(sentenceId);
       audio.pause();
       audio.currentTime = 0;
       audio.onended = () => setPlayingTts(false);
@@ -146,8 +127,9 @@ function LearnPage() {
       setTtsDuration(audio.duration / audio.playbackRate);
       setTtsKey((k) => k + 1);
       await audio.play().catch(() => setPlayingTts(false));
-    } catch {
+    } catch (error) {
       setPlayingTts(false);
+      setTtsError(error instanceof Error ? error.message : "Audio unavailable");
     }
   }
 
@@ -241,7 +223,7 @@ function LearnPage() {
             variant="soft"
             onClick={() => {
               setShowAnswer(true);
-              setTimeout(() => playTts(current.targetText), 200);
+              setTimeout(() => playTts(current.id), 200);
             }}
             icon={<ArrowRight className="h-5 w-5" />}
           >
@@ -251,17 +233,19 @@ function LearnPage() {
           <div className="space-y-2">
             <div className="flex justify-center">
               <button
+                aria-label="Play sentence audio"
                 className={`relative overflow-hidden flex items-center justify-center h-7 px-12 rounded-full cursor-pointer transition-colors ${
                   playingTts
                     ? "bg-primary/20 text-primary"
                     : "bg-primary/10 text-muted-foreground hover:bg-primary/15"
                 }`}
-                onClick={() => { ttsSlowRef.current = false; playTts(current.targetText); }}
+                onClick={() => { ttsSlowRef.current = false; playTts(current.id); }}
               >
                 {playingTts && <AudioProgress key={ttsKey} duration={ttsDuration} />}
                 <Volume2 className="h-3.5 w-3.5 relative z-10" />
               </button>
             </div>
+            {ttsError && <p role="alert" className="text-center text-xs text-destructive">{ttsError}</p>}
             <div className="grid grid-cols-5 bg-primary/10 rounded-lg overflow-hidden h-14">
               {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
                 <button

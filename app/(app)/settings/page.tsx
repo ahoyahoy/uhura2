@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { ArrowLeft, LogOut } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "@/lib/auth-client";
+import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string";
 
 const THEMES = [
   { value: "light", label: "Light" },
@@ -20,15 +20,10 @@ const GRADE_STYLES = [
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const [gradeStyle, setGradeStyle] = useState("numbers");
-
-  useEffect(() => {
-    setGradeStyle(localStorage.getItem("gradeStyle") ?? "numbers");
-  }, []);
+  const gradeStyle = useStoredString("gradeStyle", "numbers");
 
   function handleGradeStyle(value: string) {
-    setGradeStyle(value);
-    localStorage.setItem("gradeStyle", value);
+    setStoredString("gradeStyle", value);
   }
 
   return (
