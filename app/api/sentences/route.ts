@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { sentence, sentenceProgress, topic } from "@/db/schema";
+import { languageClass, sentence, sentenceProgress, topic } from "@/db/schema";
 import { eq, and, asc, isNull } from "drizzle-orm";
-import { VOICES } from "@/lib/voices";
+import { voiceName } from "@/lib/voice-names";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
   if (!t || t.userId !== session.user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  const course = t.classId ? (await db.select({ targetLanguage: languageClass.targetLanguage })
+    .from(languageClass)
+    .where(and(eq(languageClass.id, t.classId), eq(languageClass.userId, session.user.id))))[0] : null;
 
   const rows = await db
     .select({
@@ -52,7 +55,7 @@ export async function GET(req: NextRequest) {
     sourceText: r.sourceText,
     targetText: r.targetText,
     voiceId: r.voiceId,
-    voiceName: VOICES.find((voice) => voice.id === r.voiceId)?.name ?? "Voice",
+    voiceName: voiceName(r.voiceId, course?.targetLanguage ?? "en"),
     position: r.position,
     progress: r.level !== null
       ? { level: r.level, lastGrade: r.lastGrade, nextReviewAt: r.nextReviewAt }

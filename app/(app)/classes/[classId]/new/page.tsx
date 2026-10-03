@@ -11,6 +11,8 @@ import { useScreenBg } from "@/lib/hooks/use-screen-bg";
 import { VOICES } from "@/lib/voice-catalog";
 import { voiceVolume } from "@/lib/voice-volume";
 import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string";
+import { useSync } from "@/lib/hooks/use-sync";
+import { voiceName } from "@/lib/voice-names";
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const GOALS = [
@@ -70,6 +72,8 @@ export default function NewTopicPage() {
   useScreenBg("tinted");
   const router = useRouter();
   const { classId } = useParams<{ classId: string }>();
+  const { data: syncData } = useSync();
+  const targetLanguage = syncData?.classes.find((course) => course.id === classId)?.targetLanguage;
   const [description, setDescription] = useState("");
   const [level, setLevel] = useState("B1");
   const [goalKind, setGoalKind] = useState("situation");
@@ -236,23 +240,26 @@ export default function NewTopicPage() {
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">Voices · choose one or more. Samples speak the language of this course.</p>
           <div className="grid grid-cols-2 gap-2">
-            {VOICES.map((voice) => <div key={voice.id} className={`relative rounded-lg bg-card ${voiceIds.includes(voice.id) ? "ring-1 ring-primary" : ""}`}>
+            {targetLanguage ? VOICES.map((voice) => {
+              const name = voiceName(voice.id, targetLanguage);
+              return <div key={voice.id} className={`relative rounded-lg bg-card ${voiceIds.includes(voice.id) ? "ring-1 ring-primary" : ""}`}>
               <button type="button" aria-pressed={voiceIds.includes(voice.id)} onClick={() => toggleVoice(voice.id)}
                 className="w-full min-h-18 rounded-lg p-3 pr-12 text-left hover:bg-primary/5 transition-colors">
-                <span className="flex items-center gap-1.5 text-sm">{voice.name}{voiceIds.includes(voice.id) && <Check aria-hidden="true" className="h-3.5 w-3.5 text-primary" />}</span>
+                <span className="flex items-center gap-1.5 text-sm">{name}{voiceIds.includes(voice.id) && <Check aria-hidden="true" className="h-3.5 w-3.5 text-primary" />}</span>
                 <span className="block text-xs text-muted-foreground">
                   {previewState?.id === voice.id ? previewState.status === "loading" ? "Loading sample…" : "Playing sample" : voice.description}
                 </span>
               </button>
               <button type="button" onClick={() => playPreview(voice.id)}
                 disabled={previewState?.id === voice.id && previewState.status === "loading"}
-                aria-label={`${previewState?.id === voice.id ? previewState.status === "loading" ? "Loading" : "Stop" : "Play"} ${voice.name} voice sample`}
+                aria-label={`${previewState?.id === voice.id ? previewState.status === "loading" ? "Loading" : "Stop" : "Play"} ${name} voice sample`}
                 className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary disabled:opacity-70">
                 {previewState?.id === voice.id && previewState.status === "loading" ? <Loader2 className="h-4 w-4 animate-spin" />
                   : previewState?.id === voice.id && previewState.status === "playing" ? <Pause className="h-4 w-4" />
                   : <Volume2 className="h-4 w-4" />}
               </button>
-            </div>)}
+            </div>;
+            }) : <div className="col-span-2 flex justify-center py-4"><Loader2 aria-label="Loading voices" className="h-5 w-5 animate-spin text-muted-foreground" /></div>}
           </div>
         </div>
       </div>
@@ -260,7 +267,7 @@ export default function NewTopicPage() {
       <FloatingBar>
         <ActionButton
           onClick={handleSubmit}
-          disabled={createTopic.isPending || !description.trim() || (goalKind !== "situation" && !focus.trim()) || voiceIds.length === 0}
+          disabled={createTopic.isPending || !targetLanguage || !description.trim() || (goalKind !== "situation" && !focus.trim()) || voiceIds.length === 0}
           icon={createTopic.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
         >
           {createTopic.isPending ? "Generating..." : createTopic.isError ? "Try again" : "Create topic"}
