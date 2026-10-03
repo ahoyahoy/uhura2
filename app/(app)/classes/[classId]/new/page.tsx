@@ -227,21 +227,25 @@ export default function NewTopicPage() {
               onClick={() => setRegister(item.id)}>{item.label}</button>)}
           </div>
         </div>
-        <div className="flex justify-center gap-2">
-          {LEVELS.map((l) => (
-            <button
-              key={l}
-              type="button"
-              className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
-                level === l
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card hover:bg-primary/10"
-              }`}
-              onClick={() => setLevel(l)}
-            >
-              {l}
-            </button>
-          ))}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Level</p>
+          <div className="flex flex-wrap gap-2">
+            {LEVELS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                aria-pressed={level === l}
+                className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
+                  level === l
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card hover:bg-primary/10"
+                }`}
+                onClick={() => setLevel(l)}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">Voices · choose one or more. Samples speak the language of this course.</p>
