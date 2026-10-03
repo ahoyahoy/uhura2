@@ -112,6 +112,13 @@ function LearnPage() {
     };
   }, []);
 
+  const currentSentenceId = current?.id;
+  useEffect(() => {
+    if (!currentSentenceId) return;
+    // Start loading only the visible card; playback reuses this cached request.
+    void getAudioUrl(currentSentenceId).catch(() => {});
+  }, [currentSentenceId]);
+
   const ttsSlowRef = useRef(false);
 
   async function playTts(sentenceId: string, voiceId?: string | null) {
