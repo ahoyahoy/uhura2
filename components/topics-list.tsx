@@ -109,7 +109,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
         ))}
       </div>
 
-      <FloatingBar>
+      <FloatingBar compact={selected.size > 0} className={selected.size > 0 ? "space-y-3" : undefined}>
         {selected.size > 0 ? (
           <ActionButton
             onClick={startReview}
@@ -125,31 +125,31 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             </ActionButton>
           </Link>
         )}
-      </FloatingBar>
-      {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-4">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground bg-primary/10 rounded-full px-4 py-1.5">
-            {selected.size === 1 && <><Link href={`/classes/${classId}/topics/${[...selected][0]}`} className="hover:text-foreground/70">Review sentences</Link><span>·</span></>}
-            <button
-              className="cursor-pointer hover:text-foreground/70 transition-colors"
-              onClick={() => setConfirmation("generate")}
-              disabled={generateMutation.isPending || selected.size !== 1}
-              title={selected.size !== 1 ? "Select one lesson to add sentences" : undefined}
-            >
-              {generateMutation.isPending ? "Generating..." : generateMutation.isError ? "Try again" : "Generate more"}
-            </button>
-            <span>·</span>
-            <button
-              className="cursor-pointer hover:text-foreground/70 transition-colors"
-              onClick={() => setConfirmation("remove")}
-              disabled={deleting || generateMutation.isPending}
-            >
-              {deleting ? "Removing…" : "Remove"}
-            </button>
+        {selected.size > 0 && (
+          <div className="flex justify-center">
+            <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full bg-primary/10 px-4 py-1.5 text-xs text-muted-foreground">
+              {selected.size === 1 && <><Link href={`/classes/${classId}/topics/${[...selected][0]}`} className="hover:text-foreground/70">Review sentences</Link><span>·</span></>}
+              <button
+                className="cursor-pointer hover:text-foreground/70 transition-colors"
+                onClick={() => setConfirmation("generate")}
+                disabled={generateMutation.isPending || selected.size !== 1}
+                title={selected.size !== 1 ? "Select one lesson to add sentences" : undefined}
+              >
+                {generateMutation.isPending ? "Generating..." : generateMutation.isError ? "Try again" : "Generate more"}
+              </button>
+              <span>·</span>
+              <button
+                className="cursor-pointer hover:text-foreground/70 transition-colors"
+                onClick={() => setConfirmation("remove")}
+                disabled={deleting || generateMutation.isPending}
+              >
+                {deleting ? "Removing…" : "Remove"}
+              </button>
+            </div>
           </div>
-          {generateMutation.isSuccess && <p role="status" className="absolute top-9 text-xs text-muted-foreground">Added {generateMutation.data.sentences.length} sentences</p>}
-        </div>
-      )}
+        )}
+        {selected.size > 0 && generateMutation.isSuccess && <p role="status" className="text-center text-xs text-muted-foreground">Added {generateMutation.data.sentences.length} sentences</p>}
+      </FloatingBar>
       <ConfirmDialog
         open={confirmation === "generate"}
         title="Add more sentences?"

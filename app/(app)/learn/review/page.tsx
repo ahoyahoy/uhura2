@@ -244,7 +244,7 @@ function LearnPage() {
         </p>
       )}
 
-      <FloatingBar>
+      <FloatingBar compact className="space-y-3">
         {!showAnswer ? (
           <ActionButton
             variant="soft"
@@ -291,14 +291,14 @@ function LearnPage() {
             </div>
           </div>
         )}
-      </FloatingBar>
-      <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-10">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground px-4 py-1.5">
-          <span><NumberFlow value={completed} /> done</span>
-          <span>·</span>
-          <span><NumberFlow value={remaining} /> left</span>
+        <div className="flex justify-center">
+          <div className="flex items-center gap-3 px-4 py-1.5 text-xs text-muted-foreground">
+            <span><NumberFlow value={completed} /> done</span>
+            <span>·</span>
+            <span><NumberFlow value={remaining} /> left</span>
+          </div>
         </div>
-      </div>
+      </FloatingBar>
     </div>
   );
 }
