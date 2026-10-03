@@ -127,7 +127,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
         )}
       </FloatingBar>
       {selected.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-10">
+        <div className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-center pb-4">
           <div className="flex items-center gap-3 text-xs text-muted-foreground bg-primary/10 rounded-full px-4 py-1.5">
             {selected.size === 1 && <><Link href={`/classes/${classId}/topics/${[...selected][0]}`} className="hover:text-foreground/70">Review sentences</Link><span>·</span></>}
             <button

@@ -123,7 +123,7 @@
 
 .oled {
   color-scheme: dark;
-  --main: #8298E8;
+  --main: #91A8FF;
   --main-bg: #000000;
   --background: #000000;
   --foreground: #D6D9E1;
@@ -131,18 +131,18 @@
   --card-foreground: #D6D9E1;
   --popover: #000000;
   --popover-foreground: #D6D9E1;
-  --primary: #8298E8;
-  --primary-foreground: #D6D9E1;
+  --primary: #91A8FF;
+  --primary-foreground: #F6F8FF;
   --secondary: #090B10;
   --secondary-foreground: #D6D9E1;
   --muted: #090B10;
   --muted-foreground: #9299A8;
-  --accent: #101521;
+  --accent: #151E3B;
   --accent-foreground: #D6D9E1;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: #555E71;
-  --input: #555E71;
-  --ring: #8298E8;
+  --border: #3A4A70;
+  --input: #3A4A70;
+  --ring: #91A8FF;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -150,12 +150,12 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: #000000;
   --sidebar-foreground: #D6D9E1;
-  --sidebar-primary: #8298E8;
+  --sidebar-primary: #91A8FF;
   --sidebar-primary-foreground: #D6D9E1;
-  --sidebar-accent: #101521;
+  --sidebar-accent: #151E3B;
   --sidebar-accent-foreground: #D6D9E1;
-  --sidebar-border: #555E71;
-  --sidebar-ring: #8298E8;
+  --sidebar-border: #3A4A70;
+  --sidebar-ring: #91A8FF;
 }
 
 /* OLED keeps most pixels dark; blue marks an edge, while text stays neutral. */
@@ -167,9 +167,9 @@
   border: 1px solid var(--border);
 }
 .oled .bg-primary {
-  background-color: #101629;
-  border: 1px solid var(--primary);
-  color: var(--foreground);
+  background: linear-gradient(115deg, #1B285D 0%, #2C438C 55%, #223369 100%);
+  border: 1px solid #7792F4;
+  color: var(--primary-foreground);
 }
 .oled .bg-primary\/10,
 .oled .bg-primary\/15,
@@ -178,8 +178,23 @@
   border: 1px solid var(--border);
 }
 .oled .bg-primary\/20 {
-  background-color: #101629;
+  background-color: #17254C;
   border-color: var(--primary);
+}
+.oled .action-button-primary {
+  background:
+    radial-gradient(ellipse at 78% -55%, rgba(175, 192, 255, 0.7), transparent 58%),
+    linear-gradient(110deg, #1C285D 0%, #304A9F 52%, #1D2B66 100%);
+  border-color: #91A8FF;
+  box-shadow: inset 0 1px 0 rgba(231, 238, 255, 0.24), 0 0 28px rgba(74, 105, 247, 0.2);
+  color: #F7F9FF;
+}
+.oled .action-button-primary:hover {
+  filter: brightness(1.13);
+}
+.oled .action-button-soft {
+  background: linear-gradient(110deg, #0B1122 0%, #111B37 100%);
+  border-color: #4B629F;
 }
 .oled .text-primary {
   color: var(--foreground);
@@ -199,11 +214,12 @@
   background-color: #172039;
 }
 .oled .topic-selected {
-  background-color: #101629;
-  border: 1px solid var(--primary);
+  background: linear-gradient(90deg, #17234C 0%, #101831 65%, #0A0F1D 100%);
+  border: 0;
+  color: #EEF1FF;
 }
 .oled .animate-audio-progress {
-  background-color: rgba(130, 152, 232, 0.2);
+  background-color: rgba(145, 168, 255, 0.24);
   border: 0;
 }
 
