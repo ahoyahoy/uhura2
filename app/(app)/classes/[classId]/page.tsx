@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowUpRight, ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowUpRight, Loader2 } from "lucide-react";
+import { FloatingBackButton } from "@/components/floating-back-button";
 import { TopicsList } from "@/components/topics-list";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
@@ -21,22 +22,21 @@ export default function ClassTopicsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <>
+        <FloatingBackButton href="/home" label="Back to home" />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
     );
   }
 
   return (
     <>
+    <FloatingBackButton href="/home" label="Back to home" />
     <div className="fixed top-0 left-0 right-0 z-10 px-6 py-6 bg-[var(--background)]/70 backdrop-blur-sm">
       <div className="w-full max-w-2xl mx-auto flex items-center justify-between">
-        <Link
-          href="/home"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+        <div className="w-9" aria-hidden="true" />
         <h1 className="text-2xl font-normal">Sentences</h1>
         <div className="w-9" />
       </div>

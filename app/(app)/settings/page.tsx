@@ -2,8 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import { ArrowLeft, LogOut } from "lucide-react";
-import Link from "next/link";
+import { LogOut } from "lucide-react";
+import { FloatingBackButton, floatingIconButtonClassName } from "@/components/floating-back-button";
 import { signOut } from "@/lib/auth-client";
 import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string";
 
@@ -34,20 +34,19 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col items-stretch min-h-svh w-full max-w-2xl mx-auto p-6">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/home"
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <button
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0 cursor-pointer"
-          onClick={() => signOut()}
-        >
-          <LogOut className="h-4 w-4" />
-        </button>
+      <FloatingBackButton href="/home" label="Back to home" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-30">
+        <div className="mx-auto flex w-full max-w-2xl justify-end px-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <button
+            aria-label="Sign out"
+            className={`${floatingIconButtonClassName} cursor-pointer`}
+            onClick={() => signOut()}
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+      <div className="h-9" aria-hidden="true" />
 
       <h1 className="mt-auto mb-16 text-4xl font-normal">Settings</h1>
 

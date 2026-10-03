@@ -6,6 +6,7 @@ import { Loader2, Plus } from "lucide-react";
 import { getLanguageLabel } from "@/lib/languages";
 import { useSync } from "@/lib/hooks/use-sync";
 import Link from "next/link";
+import { FloatingBackButton, floatingIconButtonClassName } from "@/components/floating-back-button";
 
 export default function ClassesPage() {
   const router = useRouter();
@@ -53,20 +54,29 @@ export default function ClassesPage() {
 
   if (!dataReady || sortedClasses.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <>
+        <FloatingBackButton href="/home" label="Back to home" />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
     );
   }
 
   return (
     <div className="flex flex-col justify-center min-h-svh p-8 space-y-4">
-      <Link
-        href="/classes/new"
-        className="fixed top-6 right-6 inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-      >
-        <Plus className="h-4 w-4" />
-      </Link>
+      <FloatingBackButton href="/home" label="Back to home" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-30">
+        <div className="mx-auto flex w-full max-w-2xl justify-end px-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
+          <Link
+            href="/classes/new"
+            aria-label="New class"
+            className={floatingIconButtonClassName}
+          >
+            <Plus aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
       {sortedClasses.map((c) => (
         <div
           key={c.id}

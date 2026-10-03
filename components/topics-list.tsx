@@ -6,6 +6,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useDeleteTopic, useGenerateSentences } from "@/lib/hooks/use-mutations";
 import NumberFlow from "@number-flow/react";
 
@@ -37,10 +38,13 @@ function BrailleSpinner() {
 export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; classId?: string }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmation, setConfirmation] = useState<"generate" | "remove" | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const deleteMutation = useDeleteTopic();
   const generateMutation = useGenerateSentences();
 
   function toggleSelect(id: string) {
+    if (deleting) return;
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -57,17 +61,23 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
 
   function generateForSelected() {
     if (selected.size !== 1) return;
+    setConfirmation(null);
     generateMutation.mutate([...selected][0]);
   }
 
-  function deleteSelected() {
-    if (!confirm(`Delete ${selected.size} topic${selected.size > 1 ? "s" : ""} and all sentences?`)) return;
-    for (const id of selected) {
-      deleteMutation.mutate(id);
+  async function deleteSelected() {
+    const ids = [...selected];
+    setConfirmation(null);
+    setDeleting(true);
+    try {
+      const results = await Promise.allSettled(ids.map((id) => deleteMutation.mutateAsync(id)));
+      setSelected(new Set(ids.filter((_, index) => results[index].status === "rejected")));
+    } finally {
+      setDeleting(false);
     }
-    setSelected(new Set());
   }
 
+  const selectedTopic = topics.find((topic) => selected.has(topic.id));
   const totalDue = topics
     .filter((t) => selected.has(t.id))
     .reduce((sum, t) => sum + t.dueSentences, 0);
@@ -122,7 +132,7 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             {selected.size === 1 && <><Link href={`/classes/${classId}/topics/${[...selected][0]}`} className="hover:text-foreground/70">Review sentences</Link><span>·</span></>}
             <button
               className="cursor-pointer hover:text-foreground/70 transition-colors"
-              onClick={generateForSelected}
+              onClick={() => setConfirmation("generate")}
               disabled={generateMutation.isPending || selected.size !== 1}
               title={selected.size !== 1 ? "Select one lesson to add sentences" : undefined}
             >
@@ -131,15 +141,34 @@ export function TopicsList({ topics, classId }: { topics: TopicWithCounts[]; cla
             <span>·</span>
             <button
               className="cursor-pointer hover:text-foreground/70 transition-colors"
-              onClick={deleteSelected}
-              disabled={deleteMutation.isPending}
+              onClick={() => setConfirmation("remove")}
+              disabled={deleting || generateMutation.isPending}
             >
-              Remove
+              {deleting ? "Removing…" : "Remove"}
             </button>
           </div>
           {generateMutation.isSuccess && <p role="status" className="absolute top-9 text-xs text-muted-foreground">Added {generateMutation.data.sentences.length} sentences</p>}
         </div>
       )}
+      <ConfirmDialog
+        open={confirmation === "generate"}
+        title="Add more sentences?"
+        description={`Add fresh practice sentences to “${selectedTopic?.title ?? "this topic"}” following its goal, level, and style.`}
+        confirmLabel="Generate more"
+        onCancel={() => setConfirmation(null)}
+        onConfirm={generateForSelected}
+      />
+      <ConfirmDialog
+        open={confirmation === "remove"}
+        title={selected.size === 1 ? "Remove this topic?" : `Remove ${selected.size} topics?`}
+        description={selected.size === 1
+          ? `“${selectedTopic?.title ?? "This topic"}” and its sentences will be removed. This can’t be undone.`
+          : "These topics and their sentences will be removed. This can’t be undone."}
+        confirmLabel={selected.size === 1 ? "Remove topic" : "Remove topics"}
+        destructive
+        onCancel={() => setConfirmation(null)}
+        onConfirm={() => { void deleteSelected(); }}
+      />
     </>
   );
 }

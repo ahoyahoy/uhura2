@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useScreenBg } from "@/lib/hooks/use-screen-bg";
+import { FloatingBackButton } from "@/components/floating-back-button";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 type Lesson = { id: string; title: string; focus: string; level: string; practiceStyle: string };
 type Sentence = { id: string; sourceText: string; targetText: string; voiceName: string; position: number };
@@ -22,6 +23,7 @@ export default function ReviewLessonPage() {
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
   const [saving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -65,7 +67,6 @@ export default function ReviewLessonPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Remove this sentence from the lesson?")) return;
     setSaving(true);
     setError(null);
     try {
@@ -73,6 +74,7 @@ export default function ReviewLessonPage() {
       if (!response.ok) throw new Error("Could not remove sentence");
       setSentences((rows) => rows.filter((row) => row.id !== id));
       setEditing(null);
+      setRemovingId(null);
       await queryClient.invalidateQueries({ queryKey: ["sync"] });
     } catch (cause) {
       console.warn("Lesson sentence could not be removed", cause);
@@ -83,13 +85,14 @@ export default function ReviewLessonPage() {
   }
 
   return <div className="w-full max-w-2xl mx-auto p-6 pb-24">
-    <Link href={`/classes/${classId}`} aria-label="Back to course" className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary"><ArrowLeft className="h-4 w-4" /></Link>
+    <FloatingBackButton href={`/classes/${classId}`} label="Back to course" />
+    <div className="h-9" aria-hidden="true" />
     <h1 className="mt-8 text-3xl font-normal">Review sentences</h1>
     {loading && <div className="py-12 flex justify-center"><Loader2 className="animate-spin" /></div>}
     {lesson && <>
       <p className="mt-2 text-muted-foreground">{lesson.title} · {lesson.level}</p>
       {lesson.focus && <p className="mt-1 text-sm text-muted-foreground">Focus: {lesson.focus}</p>}
-      <p className="mt-4 text-sm text-muted-foreground">{sentences.length} sentences · Edit an awkward translation or remove a sentence that does not fit the goal. Edited sentences return to review; their previous audio remains in the shared cache.</p>
+      <p className="mt-4 text-sm text-muted-foreground">{sentences.length} sentences · Edit or remove any sentence that does not fit this topic.</p>
     </>}
     {error === "load" && <button onClick={() => window.location.reload()} className="mt-5 text-sm text-primary">Reload sentences</button>}
     <div className="mt-8 space-y-3">
@@ -104,9 +107,19 @@ export default function ReviewLessonPage() {
         </> : <>
           <p className="text-sm">{row.sourceText}</p>
           <p className="text-sm text-muted-foreground">{row.targetText}</p>
-          <div className="flex gap-4 text-xs"><button disabled={saving} onClick={() => startEdit(row)} className="text-primary">Edit</button><button disabled={saving} onClick={() => remove(row.id)} className="text-destructive">Remove</button></div>
+          <div className="flex gap-4 text-xs"><button disabled={saving} onClick={() => startEdit(row)} className="text-primary">Edit</button><button disabled={saving} onClick={() => setRemovingId(row.id)} className="text-destructive">Remove</button></div>
         </>}
       </article>)}
     </div>
+    <ConfirmDialog
+      open={removingId !== null}
+      title="Remove this sentence?"
+      description="This sentence will be removed from the topic. This can’t be undone."
+      confirmLabel={error === "remove" ? "Try again" : "Remove sentence"}
+      destructive
+      pending={saving}
+      onCancel={() => { if (!saving) setRemovingId(null); }}
+      onConfirm={() => { if (removingId) void remove(removingId); }}
+    />
   </div>;
 }

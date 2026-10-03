@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Volume2, Loader2 } from "lucide-react";
+import { ArrowRight, Volume2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   SessionEngine,
@@ -17,6 +17,7 @@ import { useSentencesDue } from "@/lib/hooks/use-sentences-due";
 import { useRateSentence } from "@/lib/hooks/use-mutations";
 import { useStoredString } from "@/lib/hooks/use-stored-string";
 import { voiceVolume } from "@/lib/voice-volume";
+import { FloatingBackButton } from "@/components/floating-back-button";
 
 export default function LearnPageWrapper() {
   return (
@@ -182,9 +183,12 @@ function LearnPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <>
+        <FloatingBackButton href={backUrl} label="Back to course" />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
     );
   }
 
@@ -192,6 +196,7 @@ function LearnPage() {
   if (!current) {
     return (
       <div className="flex flex-col min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
+        <FloatingBackButton href={backUrl} label="Back to course" />
         <h1 className="mt-auto mb-4 text-4xl font-normal">All done for today</h1>
         <p className="text-muted-foreground">
           {initialCount > 0
@@ -213,13 +218,9 @@ function LearnPage() {
 
   return (
     <div className="w-full max-w-2xl mx-auto p-6 pb-44 space-y-6">
+      <FloatingBackButton href={backUrl} label="Back to course" />
       <div className="flex items-center justify-between">
-        <Link
-          href={backUrl}
-          className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+        <div className="h-9 w-9" aria-hidden="true" />
         <p className="text-xs text-muted-foreground">{current.topicTitle}</p>
       </div>
 

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { ArrowDown, ArrowRight, ArrowUpRight, Loader2 } from "lucide-react";
+import { FloatingBackButton } from "@/components/floating-back-button";
 import { LANGUAGES } from "@/lib/languages";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { SyncData } from "@/lib/hooks/use-sync";
@@ -46,12 +46,8 @@ export default function NewCoursePage() {
 
   return (
     <div className="flex flex-col items-stretch min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
-      <Link
-        href="/classes"
-        className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </Link>
+      <FloatingBackButton href="/classes" label="Back to classes" />
+      <div className="h-9" aria-hidden="true" />
 
       <h1 className="mt-auto mb-16 text-4xl font-normal px-2">New Class</h1>
       <div className="mb-8 px-2 space-y-3">

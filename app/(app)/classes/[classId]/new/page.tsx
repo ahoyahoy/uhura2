@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Loader2, ChevronDown, Pause, Volume2 } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, Check, Loader2, ChevronDown, Pause, Volume2 } from "lucide-react";
+import { FloatingBackButton } from "@/components/floating-back-button";
 import { useCreateTopic } from "@/lib/hooks/use-mutations";
 import { FloatingBar } from "@/components/floating-bar";
 import { ActionButton } from "@/components/action-button";
@@ -140,17 +140,7 @@ export default function NewTopicPage() {
 
   return (
     <div className="flex flex-col items-stretch min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
-      <div className="fixed inset-x-0 top-0 z-30 pointer-events-none">
-        <div className="w-full max-w-2xl mx-auto px-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
-          <Link
-            href={`/classes/${classId}`}
-            aria-label="Back to course"
-            className="pointer-events-auto inline-flex items-center justify-center h-9 w-9 rounded-full bg-card/90 text-primary shadow-sm backdrop-blur-sm hover:bg-card transition-transform duration-200 active:translate-y-0.5 active:duration-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+      <FloatingBackButton href={`/classes/${classId}`} label="Back to course" />
       <div className="h-9" aria-hidden="true" />
 
       <h1 className="mt-auto mb-12 text-4xl font-normal">New Topic</h1>
