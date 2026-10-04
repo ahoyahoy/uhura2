@@ -248,6 +248,7 @@ function LearnPage() {
         {!showAnswer ? (
           <ActionButton
             variant="soft"
+            className="review-answer"
             onClick={() => {
               setShowAnswer(true);
               answerTimerRef.current = setTimeout(() => playTts(current.id, current.voiceId), 200);
@@ -273,16 +274,16 @@ function LearnPage() {
                 {playingTts === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin relative z-10" /> : <Volume2 className="h-3.5 w-3.5 relative z-10" />}
               </button>
             </div>
-            <div className="grid h-14 grid-cols-5 overflow-hidden rounded-full bg-primary/10 px-3">
+            <div className="grid h-14 grid-cols-5 overflow-hidden rounded-full bg-primary px-3">
               {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
                 <button
                   key={grade}
-                  className="flex h-full items-center justify-center text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                  className="flex h-full items-center justify-center text-primary-foreground hover:bg-white/10 transition-colors cursor-pointer"
                   onClick={() => rateSentence(grade)}
                 >
                   <span className="flex flex-col items-center leading-none">
                     <span className="text-lg">{gradeStyle === "letters" ? GRADE_LETTERS[grade] : grade}</span>
-                    <span className="text-[7px] font-medium uppercase tracking-[0.1em] text-foreground/30 font-[family-name:var(--font-inter)]">
+                    <span className="text-[7px] font-medium uppercase tracking-[0.1em] text-primary-foreground/70 font-[family-name:var(--font-inter)]">
                       {GRADE_LABELS[grade]}
                     </span>
                   </span>

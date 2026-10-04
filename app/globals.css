@@ -196,6 +196,14 @@
   background: linear-gradient(110deg, #0B1122 0%, #111B37 100%);
   border-color: #4B629F;
 }
+.oled .review-answer {
+  background: #090B10;
+  border-color: var(--border);
+  box-shadow: none;
+}
+.oled .review-answer:hover {
+  background: #111827;
+}
 .oled .text-primary {
   color: var(--foreground);
 }
