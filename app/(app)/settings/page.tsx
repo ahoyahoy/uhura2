@@ -2,11 +2,10 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import { Download, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { FloatingBackButton, floatingIconButtonClassName } from "@/components/floating-back-button";
 import { signOut } from "@/lib/auth-client";
 import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string";
-import { usePwaInstall } from "@/components/pwa-install-provider";
 
 const THEMES = [
   { value: "light", label: "Light" },
@@ -28,7 +27,6 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(subscribe, mountedOnClient, renderingOnServer);
   const gradeStyle = useStoredString("gradeStyle", "numbers");
-  const { canInstall, isInstalled, isIos, install } = usePwaInstall();
 
   function handleGradeStyle(value: string) {
     setStoredString("gradeStyle", value);
@@ -90,28 +88,6 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground px-1">App</p>
-          {isInstalled ? (
-            <p className="px-1 text-sm text-muted-foreground">Uhura is installed on this device.</p>
-          ) : canInstall ? (
-            <button
-              type="button"
-              onClick={() => void install()}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm text-primary-foreground transition-transform active:translate-y-0.5"
-            >
-              <Download className="h-4 w-4" />
-              Install Uhura
-            </button>
-          ) : (
-            <p className="px-1 text-sm text-muted-foreground">
-              {isIos
-                ? "To install Uhura, open the Share menu and choose Add to Home Screen."
-                : "To install Uhura, use your browser’s menu and choose Install app. In Edge, you can also use the install icon in the address bar."}
-            </p>
-          )}
         </div>
       </div>
     </div>
