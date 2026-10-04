@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { UserRound } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
@@ -19,9 +20,12 @@ export function PersistentProfileLink() {
       className={`fixed right-8 top-16 z-20 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 ${visible ? "" : "invisible pointer-events-none"}`}
     >
       {session?.user?.image ? (
-        <img
+        <Image
           src={session.user.image}
           alt=""
+          width={36}
+          height={36}
+          loading="eager"
           className="h-9 w-9 object-cover"
           referrerPolicy="no-referrer"
         />
