@@ -273,7 +273,7 @@ function LearnPage() {
                 {playingTts === "loading" ? <Loader2 className="h-3.5 w-3.5 animate-spin relative z-10" /> : <Volume2 className="h-3.5 w-3.5 relative z-10" />}
               </button>
             </div>
-            <div className="grid h-14 grid-cols-5 overflow-hidden rounded-full bg-primary/10">
+            <div className="grid h-14 grid-cols-5 overflow-hidden rounded-full bg-primary/10 px-3">
               {([1, 2, 3, 4, 5] as Grade[]).map((grade) => (
                 <button
                   key={grade}
