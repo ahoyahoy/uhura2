@@ -197,12 +197,9 @@ function LearnPage() {
     return (
       <div className="flex flex-col min-h-svh w-full max-w-2xl mx-auto p-6 pb-44">
         <FloatingBackButton href={backUrl} label="Back to course" />
-        <h1 className="mt-auto mb-4 text-4xl font-normal">All done for today</h1>
-        <p className="text-muted-foreground">
-          {initialCount > 0
-            ? `${initialCount} sentences reviewed`
-            : "No sentences due for review"}
-        </p>
+        <h1 className="mt-auto text-4xl font-normal">
+          {initialCount > 0 ? "All done for today" : "Nothing to practice right now"}
+        </h1>
         <FloatingBar>
           <Link href={backUrl}>
             <ActionButton icon={<ArrowRight className="h-5 w-5" />}>
