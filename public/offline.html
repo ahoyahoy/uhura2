@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0029FF" />
+    <title>Offline · Uhura</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { min-height: 100svh; margin: 0; display: grid; place-items: center; background: #fff; color: #17191f; }
+      main { width: min(100% - 3rem, 28rem); }
+      h1 { font-size: 2rem; font-weight: 500; letter-spacing: -.05em; }
+      p { line-height: 1.5; color: #59606e; }
+      a { display: inline-flex; margin-top: 1rem; padding: .8rem 1.3rem; border-radius: 999px; background: #0029ff; color: #fff; text-decoration: none; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #000; color: #e8eaed; }
+        p { color: #9299a8; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You're offline</h1>
+      <p>Connect to the internet to continue with Uhura.</p>
+      <a href="/home">Try again</a>
+    </main>
+  </body>
+</html>

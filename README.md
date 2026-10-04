@@ -8,6 +8,10 @@ Install dependencies with `pnpm install`, configure `.env.local`, then run `pnpm
 
 Do not commit `.env.local`. The server needs the configured database, auth, OpenAI, and ElevenLabs environment variables. Run `pnpm exec drizzle-kit migrate` when applying the checked-in migrations to a fresh database.
 
+## Installable app
+
+On a supported browser, Uhura can be installed from the browser's app menu. The manifest provides platform icons and opens the app at `/home` in a standalone window. A service worker caches only versioned static assets and the offline screen; private pages, API responses, and speech are never stored in its cache. An offline launch shows a retry screen until the connection returns.
+
 ## Lessons and audio
 
 Lesson creation stores the learning goal, focus, practice style, register, and a selection of up to six curated voices. The selected voice IDs are remembered in this browser for the next lesson; their displayed names are stable aliases for each target language, transliterated into Latin script where needed. Each voice card is selectable as a whole; its sample is generated in the course's target language, cached permanently, and shows loading/playback state. Sarah's underlying voice ID is played at a lower volume to match the others. The backend assigns one voice to each sentence, avoiding the immediately previous voice when possible. Adding sentences keeps the same lesson goal and sends the existing sentence pairs to the generator; the server filters duplicates and runs a bounded teacher review. Generated pairs can be reviewed and edited before practice.
