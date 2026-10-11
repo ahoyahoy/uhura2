@@ -15,9 +15,10 @@ export async function GET(_req: Request, { params }: Context) {
   if (!UUID.test(id)) return NextResponse.json({ error: "Invalid article" }, { status: 400 });
   const [row] = await db.select({
     id: article.id, classId: article.classId, title: article.title, titleTranslation: article.titleTranslation,
+    sourceUrl: article.sourceUrl,
     targetLanguage: languageClass.targetLanguage, sourceLanguage: languageClass.sourceLanguage,
   }).from(article).innerJoin(languageClass, eq(languageClass.id, article.classId))
-    .where(and(eq(article.id, id), eq(article.userId, session.user.id), eq(languageClass.userId, session.user.id)));
+    .where(and(eq(article.id, id), eq(article.userId, session.user.id), eq(languageClass.userId, session.user.id), eq(article.status, "ready")));
   if (!row) return NextResponse.json({ error: "Article not found" }, { status: 404 });
   const paragraphs = await db.select({
     id: articleParagraph.id, position: articleParagraph.position,

@@ -132,8 +132,10 @@ export const article = pgTable("article", {
   userId: text("user_id").notNull().references(() => user.id),
   title: text("title").notNull(),
   titleTranslation: text("title_translation").notNull(),
+  sourceUrl: text("source_url"),
+  status: text("status").default("ready").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [uniqueIndex("article_class_source_url_unique").on(table.classId, table.sourceUrl)]);
 
 export const articleParagraph = pgTable("article_paragraph", {
   id: uuid("id").defaultRandom().primaryKey(),

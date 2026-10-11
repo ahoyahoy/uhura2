@@ -43,6 +43,13 @@
       "when": 1791682926619,
       "tag": "0005_absurd_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791685328212,
+      "tag": "0006_windy_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

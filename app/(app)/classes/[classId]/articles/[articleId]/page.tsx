@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pause, Play, Trash2, Volume2 } from "lucide-react";
+import { ExternalLink, Loader2, Pause, Play, Trash2, Volume2 } from "lucide-react";
 import { FloatingBackButton } from "@/components/floating-back-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { getLanguageLabel } from "@/lib/languages";
@@ -12,7 +12,7 @@ import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string"
 type ReadingMode = "target" | "both" | "source";
 type Paragraph = { id: string; position: number; targetText: string; sourceText: string };
 type Article = {
-  id: string; classId: string; title: string; titleTranslation: string;
+  id: string; classId: string; title: string; titleTranslation: string; sourceUrl: string | null;
   targetLanguage: string; sourceLanguage: string; paragraphs: Paragraph[];
 };
 type Playback = { index: number; status: "loading" | "playing" } | null;
@@ -116,6 +116,10 @@ export default function ArticlePage() {
               {mode === "both" && <p lang={article.sourceLanguage} dir={article.sourceLanguage === "ar" ? "rtl" : "auto"} className="mt-3 text-xl leading-tight text-muted-foreground">{article.titleTranslation}</p>}
             </>
           )}
+          {article.sourceUrl && <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            Original article <ExternalLink className="h-3.5 w-3.5" />
+          </a>}
         </div>
         <button type="button" aria-label="Remove article" onClick={() => setRemoveOpen(true)}
           className="mt-1 shrink-0 cursor-pointer rounded-full p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">
