@@ -6,6 +6,7 @@ const variedA2 = {
   goalKind: "grammar",
   practiceStyle: "varied",
   level: "A2",
+  sourceLanguage: "cs",
   targetLanguage: "en",
 };
 
@@ -59,4 +60,13 @@ test("allows intentionally controlled repetition in fixed practice", () => {
     source: `Každý den čtu ${sourceObject}.`, target: `I read ${targetObject} every day.`,
   }));
   assert.equal(filterSentencePairs(candidates, [], fixedA2).length, 6);
+});
+
+test("rejects an English he/she reference when the Czech source omits that subject", () => {
+  const candidates = [
+    { source: "Po večeři vždycky pije čaj.", target: "She always drinks tea after dinner." },
+    { source: "On nekouří.", target: "He doesn't smoke." },
+  ];
+  assert.ok(batchQualityIssues(candidates, variedA2).some((issue) => issue.includes("Czech pronoun")));
+  assert.deepEqual(filterSentencePairs(candidates, [], { ...variedA2, practiceStyle: "fixed" }), [candidates[1]]);
 });

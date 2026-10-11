@@ -4,6 +4,7 @@ export type SentenceQualityPlan = {
   goalKind: string;
   practiceStyle: "fixed" | "varied" | "situational";
   level: string;
+  sourceLanguage: string;
   targetLanguage: string;
 };
 
@@ -48,6 +49,14 @@ function opening(text: string): string {
   return normalize(text).split(" ").slice(0, 2).join(" ");
 }
 
+function hasAmbiguousCzechSubject(pair: SentencePair, plan: SentenceQualityPlan): boolean {
+  if (plan.sourceLanguage !== "cs" || plan.targetLanguage !== "en") return false;
+  const targetSubject = pair.target.match(/^(?:(he|she)\b|(?:(?:does|did|is|was|can|will|has)|(?:what|where|when|why|how)\s+(?:does|did|is|was|can|will|has))\s+(he|she)\b)/i);
+  const subject = (targetSubject?.[1] ?? targetSubject?.[2])?.toLowerCase();
+  if (!subject) return false;
+  return !new RegExp(`\\b${subject === "he" ? "on" : "ona"}\\b`, "i").test(pair.source);
+}
+
 export function parseSentencePairs(value: unknown): SentencePair[] {
   if (!Array.isArray(value) || value.length > 10 || value.length === 0) {
     throw new Error("AI returned an invalid number of sentences");
@@ -72,7 +81,10 @@ export function parseSentencePairs(value: unknown): SentencePair[] {
 }
 
 export function batchQualityIssues(pairs: SentencePair[], plan: SentenceQualityPlan): string[] {
-  if (!isShortVariedGrammar(plan)) return [];
+  const issues: string[] = [];
+  const ambiguousSubjectCount = pairs.filter((pair) => hasAmbiguousCzechSubject(pair, plan)).length;
+  if (ambiguousSubjectCount > 0) issues.push(`${ambiguousSubjectCount} English he/she subjects have no matching explicit Czech pronoun; make the source unambiguous.`);
+  if (!isShortVariedGrammar(plan)) return issues;
   const compoundCount = pairs.filter((pair) => hasMultipleClauses(pair, plan.targetLanguage)).length;
   const longCount = pairs.filter((pair) => tooLongForA2(pair, plan)).length;
   const openings = new Map<string, number>();
@@ -80,7 +92,6 @@ export function batchQualityIssues(pairs: SentencePair[], plan: SentenceQualityP
     const key = opening(pair.target);
     if (key) openings.set(key, (openings.get(key) ?? 0) + 1);
   }
-  const issues: string[] = [];
   if (compoundCount > 2) issues.push(`${compoundCount} sentences use multiple clauses or a repeated contrast frame; use at most two and write mostly single, independent utterances.`);
   if (longCount > 0) issues.push(`${longCount} target sentences exceed 14 words; shorten them without losing the grammar goal.`);
   if ([...openings.values()].some((count) => count > 2)) issues.push("Several sentences begin with the same two words; vary their communicative use and sentence shape.");
@@ -100,6 +111,7 @@ export function filterSentencePairs(
   const openings = new Map<string, number>();
   for (const pair of candidates) {
     if (requiredHeadword && !new RegExp(`\\b${requiredHeadword}(?:s|es|ed|d|ing)?\\b`, "i").test(pair.target)) continue;
+    if (hasAmbiguousCzechSubject(pair, plan)) continue;
     const exact = prior.some((item) => item.source === normalize(pair.source) || item.target === normalize(pair.target));
     const near = plan.practiceStyle !== "fixed" && [...existing, ...accepted].some((item) => isNearCopy(pair.target, item.target));
     if (exact || near) continue;
