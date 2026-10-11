@@ -25,8 +25,10 @@ export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const description = typeof body.description === "string" ? body.description.trim() : "";
-  const focus = typeof body.focus === "string" ? body.focus.trim() : "";
+  const submittedFocus = typeof body.focus === "string" ? body.focus.trim() : "";
   const goalKind = body.goalKind ?? "situation";
+  const focus = goalKind === "grammar" && (!submittedFocus || /^(?:tenses?|verb tenses|grammar|gramatika|časy)$/i.test(submittedFocus))
+    ? description.slice(0, 200) : submittedFocus;
   const practiceStyle = body.practiceStyle ?? "varied";
   const register = body.register ?? "neutral_spoken";
   const voiceIds = validateVoiceIds(body.voiceIds ?? [DEFAULT_VOICE_ID]);
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
     typeof body.classId !== "string" || !UUID.test(body.classId) ||
     !LEVELS.includes(String(body.level)) || !GOAL_KINDS.includes(goalKind as GoalKind) ||
     !PRACTICE_STYLES.includes(practiceStyle as PracticeStyle) || !REGISTERS.includes(register as Register) ||
-    (goalKind !== "situation" && !focus) || !voiceIds) {
+    ((goalKind === "vocabulary" || goalKind === "contrast") && !focus) || !voiceIds) {
     return NextResponse.json({ error: "Check the lesson goal, level and voices" }, { status: 400 });
   }
 
@@ -50,7 +52,8 @@ export async function POST(req: NextRequest) {
     }, []);
   } catch (error) {
     const failure = generationError(error);
-    console.error("Lesson generation failed", failure.code);
+    console.error("Lesson generation failed", failure.code,
+      error instanceof Error && !("status" in error) ? error.message.slice(0, 300) : "provider error");
     return NextResponse.json({ error: failure.message }, { status: failure.status });
   }
 

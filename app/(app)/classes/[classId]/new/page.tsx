@@ -130,7 +130,7 @@ export default function NewTopicPage() {
 
   function handleSubmit() {
     createTopic.mutate(
-      { description, level, classId, goalKind, focus, practiceStyle, register, voiceIds },
+      { description, level, classId, goalKind, focus: goalKind === "grammar" ? description.slice(0, 200) : focus, practiceStyle, register, voiceIds },
       { onSuccess: () => {
         setStoredString(LAST_VOICES_KEY, JSON.stringify(voiceIds));
         router.replace(`/classes/${classId}`);
@@ -196,10 +196,11 @@ export default function NewTopicPage() {
               className={`rounded-full px-3 py-1.5 text-xs ${goalKind === goal.id ? "bg-primary text-primary-foreground" : "bg-card"}`}
               onClick={() => setGoalKind(goal.id)}>{goal.label}</button>)}
           </div>
-          {goalKind !== "situation" && <input value={focus} onChange={(event) => setFocus(event.target.value)}
+          {(goalKind === "vocabulary" || goalKind === "contrast") && <input value={focus} onChange={(event) => setFocus(event.target.value)}
             className="w-full rounded-lg bg-card px-4 py-3 text-sm" maxLength={200}
-            placeholder={goalKind === "vocabulary" ? "e.g. borrow — take and return later" : goalKind === "contrast" ? "e.g. borrow vs lend" : "e.g. used to — past habits"}
+            placeholder={goalKind === "vocabulary" ? "e.g. borrow — take and return later" : "e.g. borrow vs lend"}
             aria-label="Learning focus" />}
+          {goalKind === "grammar" && <p className="text-xs text-muted-foreground">Name the exact form or contrast in the description above, e.g. Present Simple vs Present Continuous.</p>}
         </div>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">Practice style</p>
@@ -267,7 +268,7 @@ export default function NewTopicPage() {
       <FloatingBar>
         <ActionButton
           onClick={handleSubmit}
-          disabled={createTopic.isPending || !targetLanguage || !description.trim() || (goalKind !== "situation" && !focus.trim()) || voiceIds.length === 0}
+          disabled={createTopic.isPending || !targetLanguage || !description.trim() || ((goalKind === "vocabulary" || goalKind === "contrast") && !focus.trim()) || voiceIds.length === 0}
           icon={createTopic.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
         >
           {createTopic.isPending ? "Generating..." : createTopic.isError ? "Try again" : "Create topic"}

@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
     await db.update(topicGeneration).set({ status: "failed", updatedAt: new Date() })
       .where(eq(topicGeneration.topicId, body.topicId));
     const failure = generationError(error);
-    console.error("Lesson continuation failed", failure.code);
+    console.error("Lesson continuation failed", failure.code,
+      error instanceof Error && !("status" in error) ? error.message.slice(0, 300) : "provider error");
     return NextResponse.json({ error: failure.message }, { status: failure.status });
   }
 }

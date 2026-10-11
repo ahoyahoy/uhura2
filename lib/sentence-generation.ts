@@ -91,6 +91,7 @@ export async function generateSentenceBatch(plan: LessonPlan, existing: Sentence
   const targetLanguage = getLanguageLabel(plan.targetLanguage);
   const completion = await openai.chat.completions.create({
     model: "gpt-5.4-mini",
+    reasoning_effort: "low",
     max_completion_tokens: 3500,
     response_format: { type: "json_schema", json_schema: { name: "sentence_batch", strict: true, schema: responseSchema } },
     messages: [
@@ -106,7 +107,7 @@ Every existing pair is context for continuity and something to avoid repeating. 
   });
   const choice = completion.choices[0];
   if (!choice || choice.finish_reason !== "stop" || !choice.message.content || choice.message.refusal) {
-    throw new Error("AI generation did not finish with valid content");
+    throw new Error(`AI generation did not finish with valid content (${choice?.finish_reason ?? "no_choice"})`);
   }
   let parsed: unknown;
   try { parsed = JSON.parse(choice.message.content); } catch { throw new Error("AI returned invalid JSON"); }
@@ -116,6 +117,7 @@ Every existing pair is context for continuity and something to avoid repeating. 
   const candidates = filterSentencePairs(response.sentences, existing, plan.practiceStyle, requiredEnglishHeadword(plan));
   const review = await openai.chat.completions.create({
     model: "gpt-5.4-mini",
+    reasoning_effort: "low",
     max_completion_tokens: 3000,
     response_format: { type: "json_schema", json_schema: { name: "reviewed_sentence_batch", strict: true, schema: responseSchema } },
     messages: [
@@ -125,7 +127,7 @@ Every existing pair is context for continuity and something to avoid repeating. 
   });
   const reviewedChoice = review.choices[0];
   if (!reviewedChoice || reviewedChoice.finish_reason !== "stop" || !reviewedChoice.message.content || reviewedChoice.message.refusal) {
-    throw new Error("AI review did not finish with valid content");
+    throw new Error(`AI review did not finish with valid content (${reviewedChoice?.finish_reason ?? "no_choice"})`);
   }
   let reviewed: unknown;
   try { reviewed = JSON.parse(reviewedChoice.message.content); } catch { throw new Error("AI review returned invalid JSON"); }
