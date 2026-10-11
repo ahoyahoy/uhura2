@@ -2,6 +2,7 @@ import { openai } from "@/lib/openai";
 import { getLanguageLabel } from "@/lib/languages";
 import { MAX_PARAGRAPH_LENGTH } from "@/lib/article-paragraphs";
 import type { ImportedArticle } from "@/lib/article-import";
+import { ARTICLE_TRANSLATION_MODEL } from "@/lib/ai-models";
 
 export function validateArticleTranslation(result: unknown, article: ImportedArticle): {
   titleTranslation: string; paragraphs: string[];
@@ -25,7 +26,7 @@ export async function translateImportedArticle(article: ImportedArticle, sourceL
   ];
   if (Buffer.byteLength(JSON.stringify(messages), "utf8") > 20_000) throw new Error("Article is too long to translate");
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4-mini",
+    model: ARTICLE_TRANSLATION_MODEL,
     reasoning_effort: "low",
     max_completion_tokens: 6500,
     response_format: { type: "json_schema", json_schema: { name: "article_translation", strict: true, schema: {

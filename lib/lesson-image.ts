@@ -1,6 +1,7 @@
 import { openai } from "@/lib/openai";
 import { getLanguageLabel } from "@/lib/languages";
 import { GOAL_KINDS, type GoalKind } from "@/lib/sentence-generation";
+import { LESSON_IMAGE_MODEL } from "@/lib/ai-models";
 
 const MAX_IMAGE_BYTES = 1_500_000;
 const IMAGE_DATA_URL = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
@@ -45,7 +46,7 @@ export function validateImageLessonBrief(value: unknown): ImageLessonBrief {
 
 export async function readLessonImage(imageDataUrl: string, targetLanguage: string): Promise<ImageLessonBrief> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4-mini",
+    model: LESSON_IMAGE_MODEL,
     reasoning_effort: "low",
     max_completion_tokens: 900,
     response_format: { type: "json_schema", json_schema: { name: "image_lesson_brief", strict: true, schema: {

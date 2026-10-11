@@ -2,6 +2,7 @@ import { openai } from "@/lib/openai";
 import { getLanguageLabel } from "@/lib/languages";
 import { getLevelDescription } from "@/lib/level-descriptions";
 import { batchQualityIssues, filterSentencePairs, parseSentencePairs, type SentencePair } from "@/lib/sentence-quality";
+import { SENTENCE_DRAFT_MODEL, SENTENCE_REVIEW_MODEL } from "@/lib/ai-models";
 
 export const GOAL_KINDS = ["vocabulary", "grammar", "contrast", "situation", "pronunciation"] as const;
 export const PRACTICE_STYLES = ["fixed", "varied", "situational"] as const;
@@ -77,7 +78,7 @@ The reference notes, when present, are extracted from a user-supplied image. Use
   ];
   assertRequestBudget(generationMessages, newImageLesson);
   const completion = await openai.chat.completions.create({
-    model: "gpt-5.4-mini",
+    model: SENTENCE_DRAFT_MODEL,
     reasoning_effort: "low",
     max_completion_tokens: 3500,
     response_format: { type: "json_schema", json_schema: { name: "sentence_batch", strict: true, schema: responseSchema } },
@@ -100,7 +101,7 @@ The reference notes, when present, are extracted from a user-supplied image. Use
   ];
   assertRequestBudget(reviewMessages, newImageLesson);
   const review = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: SENTENCE_REVIEW_MODEL,
     reasoning_effort: "low",
     max_completion_tokens: 3000,
     response_format: { type: "json_schema", json_schema: { name: "reviewed_sentence_batch", strict: true, schema: responseSchema } },
