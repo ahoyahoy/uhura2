@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { topic, sentence, languageClass } from "@/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { generateSentenceBatch, GOAL_KINDS, PRACTICE_STYLES, REGISTERS, type GoalKind, type PracticeStyle, type Register } from "@/lib/sentence-generation";
 import { DEFAULT_VOICE_ID, pickVoice, validateVoiceIds } from "@/lib/voices";
 import { generationError } from "@/lib/generation-error";
@@ -15,7 +15,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const topics = await db.select().from(topic).where(eq(topic.userId, session.user.id)).orderBy(desc(topic.createdAt));
+  const topics = await db.select().from(topic).where(and(eq(topic.userId, session.user.id), isNull(topic.deletedAt))).orderBy(desc(topic.createdAt));
   return NextResponse.json({ topics });
 }
 
