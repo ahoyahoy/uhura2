@@ -1,0 +1,1 @@
+ALTER TABLE "topic" ADD COLUMN "reference_notes" text DEFAULT '' NOT NULL;

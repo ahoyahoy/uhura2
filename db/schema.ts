@@ -89,6 +89,7 @@ export const topic = pgTable("topic", {
     .references(() => user.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
+    referenceNotes: text("reference_notes").default("").notNull(),
   level: text("level").default("B1").notNull(),
   goalKind: text("goal_kind").default("situation").notNull(),
   focus: text("focus").default("").notNull(),

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowRight, Check, Loader2, ChevronDown, Pause, Volume2 } from "lucide-react";
+import { ArrowRight, Check, Loader2, ChevronDown, Pause, Volume2, ImagePlus, X } from "lucide-react";
+import Image from "next/image";
 import { FloatingBackButton } from "@/components/floating-back-button";
 import { useCreateTopic } from "@/lib/hooks/use-mutations";
 import { FloatingBar } from "@/components/floating-bar";
@@ -20,6 +21,7 @@ const GOALS = [
   { id: "vocabulary", label: "Word / phrase" },
   { id: "grammar", label: "Grammar" },
   { id: "contrast", label: "Compare" },
+  { id: "pronunciation", label: "Pronunciation" },
 ];
 const STYLES = [
   { id: "fixed", label: "Fixed pattern" },
@@ -75,6 +77,10 @@ export default function NewTopicPage() {
   const { data: syncData } = useSync();
   const targetLanguage = syncData?.classes.find((course) => course.id === classId)?.targetLanguage;
   const [description, setDescription] = useState("");
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [imageName, setImageName] = useState("");
+  const [imageError, setImageError] = useState("");
+  const [isReadingImage, setIsReadingImage] = useState(false);
   const [level, setLevel] = useState("B1");
   const [goalKind, setGoalKind] = useState("situation");
   const [focus, setFocus] = useState("");
@@ -130,7 +136,7 @@ export default function NewTopicPage() {
 
   function handleSubmit() {
     createTopic.mutate(
-      { description, level, classId, goalKind, focus: goalKind === "grammar" ? description.slice(0, 200) : focus, practiceStyle, register, voiceIds },
+      { description, image: imageData || undefined, level, classId, goalKind, focus: goalKind === "grammar" && description ? description.slice(0, 200) : focus, practiceStyle, register, voiceIds },
       { onSuccess: () => {
         setStoredString(LAST_VOICES_KEY, JSON.stringify(voiceIds));
         router.replace(`/classes/${classId}`);
@@ -189,6 +195,41 @@ export default function NewTopicPage() {
           }}
           rows={3}
         />
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Reference image · optional</p>
+          {imageData ? <div className="flex items-center gap-3 rounded-xl bg-card p-2.5">
+            <Image src={imageData} alt="Selected learning material" width={56} height={56} unoptimized className="h-14 w-14 rounded-lg object-cover" />
+            <span className="min-w-0 flex-1 truncate text-sm">{imageName}</span>
+            <button type="button" aria-label="Remove reference image" onClick={() => { setImageData(null); setImageName(""); }}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          </div> : <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-card px-4 text-sm hover:bg-primary/10">
+            {isReadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            {isReadingImage ? "Reading image…" : "Add image"}
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Reference image"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                setImageError("");
+                if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 1_500_000) {
+                  setImageError("Choose a PNG, JPEG or WebP image under 1.5 MB");
+                  return;
+                }
+                setIsReadingImage(true);
+                const reader = new FileReader();
+                reader.onload = () => {
+                  setIsReadingImage(false);
+                  if (typeof reader.result !== "string") { setImageError("Could not read this image"); return; }
+                  setImageData(reader.result);
+                  setImageName(file.name);
+                };
+                reader.onerror = () => { setIsReadingImage(false); setImageError("Could not read this image"); };
+                reader.readAsDataURL(file);
+              }} />
+          </label>}
+          {imageError && <p role="alert" className="text-xs text-muted-foreground">{imageError}</p>}
+          <p className="text-xs text-muted-foreground">We’ll use the image as the lesson’s learning material. You can also describe what to focus on above.</p>
+        </div>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">What should these sentences teach?</p>
           <div className="flex flex-wrap gap-2">
@@ -268,7 +309,7 @@ export default function NewTopicPage() {
       <FloatingBar>
         <ActionButton
           onClick={handleSubmit}
-          disabled={createTopic.isPending || !targetLanguage || !description.trim() || ((goalKind === "vocabulary" || goalKind === "contrast") && !focus.trim()) || voiceIds.length === 0}
+          disabled={createTopic.isPending || isReadingImage || !targetLanguage || (!description.trim() && !imageData) || ((goalKind === "vocabulary" || goalKind === "contrast") && !focus.trim() && !imageData) || voiceIds.length === 0}
           icon={createTopic.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
         >
           {createTopic.isPending ? "Generating..." : createTopic.isError ? "Try again" : "Create topic"}

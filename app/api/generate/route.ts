@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
     const existingRows = await db.select({ source: sentence.sourceText, target: sentence.targetText, voiceId: sentence.voiceId, position: sentence.position })
       .from(sentence).where(eq(sentence.topicId, body.topicId)).orderBy(sentence.position);
     const generated = await generateSentenceBatch({
-      description: row.lesson.description, goalKind: row.lesson.goalKind as GoalKind,
+      description: row.lesson.description, referenceNotes: row.lesson.referenceNotes,
+      goalKind: row.lesson.goalKind as GoalKind,
       focus: row.lesson.focus, practiceStyle: row.lesson.practiceStyle as PracticeStyle,
       register: row.lesson.register as Register, level: row.lesson.level,
       sourceLanguage: row.cls.sourceLanguage, targetLanguage: row.cls.targetLanguage,

@@ -100,7 +100,7 @@ export function useCreateTopic() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (body: { description: string; level: string; classId: string; goalKind: string; focus: string; practiceStyle: string; register: string; voiceIds: string[] }) => {
+    mutationFn: async (body: { description: string; image?: string; level: string; classId: string; goalKind: string; focus: string; practiceStyle: string; register: string; voiceIds: string[] }) => {
       const res = await fetch("/api/topics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
