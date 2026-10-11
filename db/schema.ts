@@ -126,6 +126,23 @@ export const sentenceProgress = pgTable("sentence_progress", {
   repetitions: integer("repetitions").default(0).notNull(),
 });
 
+export const article = pgTable("article", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  classId: uuid("class_id").notNull().references(() => languageClass.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id),
+  title: text("title").notNull(),
+  titleTranslation: text("title_translation").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const articleParagraph = pgTable("article_paragraph", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  articleId: uuid("article_id").notNull().references(() => article.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+  targetText: text("target_text").notNull(),
+  sourceText: text("source_text").notNull(),
+}, (table) => [uniqueIndex("article_paragraph_position_unique").on(table.articleId, table.position)]);
+
 export const ttsCache = pgTable("tts_cache", {
   id: uuid("id").defaultRandom().primaryKey(),
   textHash: text("text_hash").notNull().unique(),

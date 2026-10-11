@@ -53,8 +53,8 @@ export default function HomePage() {
           Sentences
         </Link>
         <Link
-          href="#"
-          className="block text-5xl font-normal tracking-[-0.05em] text-muted-foreground/40"
+          href={cls ? `/classes/${cls.id}/articles` : "/classes"}
+          className="block text-5xl font-normal tracking-[-0.05em] text-foreground hover:text-primary transition-colors"
         >
           Articles
         </Link>

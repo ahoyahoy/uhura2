@@ -56,7 +56,7 @@ export async function speechForSentence(sentenceId: string, userId: string): Pro
 
 /** Auth and ownership must be checked by the caller before using this shared cache. */
 export async function speechForText(text: string, language: string, voiceId: string): Promise<Buffer> {
-  if (!text.trim() || text.length > 350 || !isAllowedVoice(voiceId)) {
+  if (!text.trim() || text.length > 1200 || !isAllowedVoice(voiceId)) {
     throw new TtsError("Invalid audio request", 400);
   }
   const key = turboCacheKey(text, language, voiceId);
