@@ -4,7 +4,7 @@ Uhura is a language practice app built with Next.js, Better Auth, Neon/Drizzle, 
 
 ## Local development
 
-Install dependencies with `pnpm install`, configure `.env.local`, then run `pnpm dev`. The app uses [localhost:3017](http://localhost:3017) for both `dev` and `start`, so it does not collide with projects on port 3000. For Google login, use `BETTER_AUTH_URL=http://localhost:3017` and `NEXT_PUBLIC_APP_URL=http://localhost:3017`; the OAuth client's redirect URI must include `http://localhost:3017/api/auth/callback/google`.
+Install dependencies with `pnpm install`, configure `.env.local`, then run `pnpm dev`. The app uses [localhost:3017](http://localhost:3017) for both `dev` and `start`, so it does not collide with projects on port 3000. For Google login, use `BETTER_AUTH_URL=http://localhost:3017`; the OAuth client's redirect URI must include `http://localhost:3017/api/auth/callback/google`. The browser auth client uses the current origin.
 
 Do not commit `.env.local`. The server needs the configured database, auth, OpenAI, and ElevenLabs environment variables. Run `pnpm exec drizzle-kit migrate` when applying the checked-in migrations to a fresh database.
 

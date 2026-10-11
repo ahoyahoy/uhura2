@@ -2,9 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
-import { LogOut } from "lucide-react";
 import { FloatingBackButton, floatingIconButtonClassName } from "@/components/floating-back-button";
-import { signOut } from "@/lib/auth-client";
+import { SignOutButton } from "@/components/sign-out-button";
 import { setStoredString, useStoredString } from "@/lib/hooks/use-stored-string";
 
 const THEMES = [
@@ -37,13 +36,7 @@ export default function SettingsPage() {
       <FloatingBackButton href="/home" label="Back to home" />
       <div className="pointer-events-none fixed inset-x-0 top-0 z-30">
         <div className="mx-auto flex w-full max-w-2xl justify-end px-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
-          <button
-            aria-label="Sign out"
-            className={`${floatingIconButtonClassName} cursor-pointer`}
-            onClick={() => signOut()}
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <SignOutButton className={`${floatingIconButtonClassName} cursor-pointer`} />
         </div>
       </div>
       <div className="h-9" aria-hidden="true" />

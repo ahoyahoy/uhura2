@@ -25,8 +25,8 @@ function toISOString(val: unknown): string {
   throw new Error("Invalid timestamp from sync API");
 }
 
-async function fetchAndPersist(): Promise<SyncData> {
-  const res = await fetch("/api/sync");
+async function fetchAndPersist(signal: AbortSignal): Promise<SyncData> {
+  const res = await fetch("/api/sync", { signal });
   if (!res.ok) throw new Error("Sync failed");
   const data = await res.json() as {
     classes: ApiClass[]; topics: ApiTopic[]; sentences: ApiSentence[]; progress: ApiProgress[];
@@ -74,6 +74,8 @@ async function fetchAndPersist(): Promise<SyncData> {
     repetitions: p.repetitions,
   }));
 
+  signal.throwIfAborted();
+
   // Full replace in IDB
   await idb.transaction("rw", [idb.classes, idb.topics, idb.sentences, idb.progress], async () => {
     await idb.classes.clear();
@@ -94,11 +96,11 @@ export function useSync() {
 
   return useQuery<SyncData>({
     queryKey: ["sync"],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       // Step 1: If TQ cache already has data, this is a refetch → go to API
       const existing = queryClient.getQueryData<SyncData>(["sync"]);
       if (existing) {
-        return fetchAndPersist();
+        return fetchAndPersist(signal);
       }
 
       // Step 2: Try IDB
@@ -110,16 +112,18 @@ export function useSync() {
       ]);
 
       if (sentences.some((sentence) => !("voiceId" in sentence))) {
-        return fetchAndPersist();
+        return fetchAndPersist(signal);
       }
       if (topics.length > 0 || classes.length > 0) {
         // IDB has data → return immediately, schedule background refetch
-        setTimeout(() => queryClient.invalidateQueries({ queryKey: ["sync"] }), 1);
+        setTimeout(() => {
+          if (!signal.aborted) void queryClient.invalidateQueries({ queryKey: ["sync"] });
+        }, 1);
         return { classes, topics, sentences, progress };
       }
 
       // Step 3: IDB empty → full fetch
-      return fetchAndPersist();
+      return fetchAndPersist(signal);
     },
   });
 }
