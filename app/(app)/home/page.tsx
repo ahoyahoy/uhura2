@@ -59,6 +59,12 @@ export default function HomePage() {
           Articles
         </Link>
         <Link
+          href={cls ? `/quizzes?classId=${cls.id}` : "/quizzes"}
+          className="block text-5xl font-normal tracking-[-0.05em] text-foreground hover:text-primary transition-colors"
+        >
+          Quizzes
+        </Link>
+        <Link
           href="#"
           className="block text-5xl font-normal tracking-[-0.05em] text-muted-foreground/40"
         >

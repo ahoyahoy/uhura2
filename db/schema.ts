@@ -127,6 +127,55 @@ export const sentenceProgress = pgTable("sentence_progress", {
   repetitions: integer("repetitions").default(0).notNull(),
 });
 
+export const quiz = pgTable("quiz", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  classId: uuid("class_id").notNull().references(() => languageClass.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  mode: text("mode").notNull(),
+  level: text("level").notNull(),
+  questionLanguage: text("question_language").notNull(),
+  answerLanguage: text("answer_language").notNull(),
+  options: text("options").array().notNull(),
+  voiceId: text("voice_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export const quizQuestion = pgTable("quiz_question", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  quizId: uuid("quiz_id").notNull().references(() => quiz.id, { onDelete: "cascade" }),
+  prompt: text("prompt").notNull(),
+  answerIndex: integer("answer_index").notNull(),
+  example: text("example").notNull(),
+  explanation: text("explanation").notNull(),
+  position: integer("position").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [uniqueIndex("quiz_question_position_unique").on(table.quizId, table.position)]);
+
+export const quizProgress = pgTable("quiz_progress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  questionId: uuid("question_id").notNull().references(() => quizQuestion.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id),
+  level: integer("level").default(0).notNull(),
+  lastGrade: text("last_grade"),
+  lastReviewedAt: timestamp("last_reviewed_at"),
+  nextReviewAt: timestamp("next_review_at").defaultNow().notNull(),
+  repetitions: integer("repetitions").default(0).notNull(),
+}, (table) => [uniqueIndex("quiz_progress_question_user_unique").on(table.questionId, table.userId)]);
+
+export const quizGeneration = pgTable("quiz_generation", {
+  quizId: uuid("quiz_id").primaryKey().references(() => quiz.id, { onDelete: "cascade" }),
+  status: text("status").default("generating").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const quizDailyBudget = pgTable("quiz_daily_budget", {
+  key: text("key").primaryKey(),
+  questions: integer("questions").default(0).notNull(),
+});
+
 export const article = pgTable("article", {
   id: uuid("id").defaultRandom().primaryKey(),
   classId: uuid("class_id").notNull().references(() => languageClass.id, { onDelete: "cascade" }),

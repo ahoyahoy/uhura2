@@ -57,6 +57,13 @@
       "when": 1791685839314,
       "tag": "0007_abandoned_mulholland_black",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791865403393,
+      "tag": "0008_illegal_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }
