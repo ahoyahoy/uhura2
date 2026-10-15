@@ -25,6 +25,9 @@ export default function QuizPracticePage() {
   const initializedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioRequestRef = useRef(0);
+  const queuedNextRef = useRef<SessionSentence | null>(null);
+  const queuedAudioRef = useRef<Promise<string> | null>(null);
+  const advanceRequestRef = useRef(0);
   const nextTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const submittingRef = useRef(false);
   const [current, setCurrent] = useState<SessionSentence | null>(null);
@@ -40,6 +43,15 @@ export default function QuizPracticePage() {
   const question = current ? questions.get(current.id) : undefined;
   const correct = question && selectedIndex !== null ? selectedIndex === question.answerIndex : false;
 
+  function queueNextAudio(active: SessionSentence | null) {
+    // The next pick excludes the visible question. Reserving it now lets its
+    // audio download during the time the learner spends answering this one.
+    const next = active && engineRef.current.remaining > 1 ? engineRef.current.getNext() : null;
+    queuedNextRef.current = next;
+    queuedAudioRef.current = next ? getQuizAudioUrl(next.id) : null;
+    void queuedAudioRef.current?.catch(() => {});
+  }
+
   useEffect(() => {
     if (!data || initializedRef.current) return;
     initializedRef.current = true;
@@ -50,14 +62,18 @@ export default function QuizPracticePage() {
       topicTitle: data.quiz.title, progress: item.progress })));
     setInitialCount(engine.initialCount);
     setRemaining(engine.remaining);
-    setCurrent(engine.getNext());
+    const first = engine.getNext();
+    setCurrent(first);
+    queueNextAudio(first);
     setReady(true);
   }, [data]);
 
   useEffect(() => {
     const requestCounter = audioRequestRef;
+    const advanceRequestCounter = advanceRequestRef;
     return () => {
       requestCounter.current++;
+      advanceRequestCounter.current++;
       if (nextTimerRef.current) clearTimeout(nextTimerRef.current);
       audioRef.current?.pause();
     };
@@ -102,16 +118,25 @@ export default function QuizPracticePage() {
     } catch { if (request === audioRequestRef.current) setAudioState("ready"); }
   }
 
-  function advance(preselected?: SessionSentence | null) {
+  async function advance() {
+    const request = ++advanceRequestRef.current;
+    const engine = engineRef.current;
+    const reserved = queuedNextRef.current;
+    const next = reserved && engine.pool.has(reserved.id) ? reserved : engine.getNext();
+    if (next && reserved?.id === next.id && queuedAudioRef.current) {
+      // Keep the answered question visible until the new one can speak.
+      try { await queuedAudioRef.current; } catch { /* Audio failure must not block practice. */ }
+    }
+    if (request !== advanceRequestRef.current) return;
     audioRequestRef.current++;
     audioRef.current?.pause();
     setSelectedIndex(null);
     setAnswerSaved(false);
     setSaveFailed(false);
     submittingRef.current = false;
-    const engine = engineRef.current;
-    setCurrent(preselected === undefined ? engine.getNext() : preselected);
+    setCurrent(next);
     setRemaining(engine.remaining);
+    queueNextAudio(next);
   }
 
   async function submit(index: number) {
@@ -136,9 +161,7 @@ export default function QuizPracticePage() {
       });
       void queryClient.invalidateQueries({ queryKey: ["quizzes"] });
       if (result.correct) {
-        const next = engine.getNext();
-        if (next) void getQuizAudioUrl(next.id).catch(() => {});
-        nextTimerRef.current = setTimeout(() => advance(next), Math.max(0, 1000 - (performance.now() - started)));
+        nextTimerRef.current = setTimeout(() => void advance(), Math.max(0, 1000 - (performance.now() - started)));
       } else submittingRef.current = false;
     } catch {
       setSaveFailed(true);
@@ -196,7 +219,7 @@ export default function QuizPracticePage() {
     </div>}
     {saveFailed && <p className="mt-6 text-xs text-muted-foreground" role="status">Tap below to keep your progress.</p>}
     {selectedIndex !== null && (!correct || saveFailed) && <FloatingBar>
-      <ActionButton onClick={() => saveFailed ? void submit(selectedIndex) : advance()} disabled={!answerSaved && !saveFailed}
+      <ActionButton onClick={() => saveFailed ? void submit(selectedIndex) : void advance()} disabled={!answerSaved && !saveFailed}
         icon={answerSaved ? <ArrowRight className="h-5 w-5" /> : <Loader2 className="h-5 w-5 animate-spin" />}>
         {saveFailed ? "Save and continue" : answerSaved ? "Continue" : "Saving…"}
       </ActionButton>
