@@ -11,15 +11,17 @@ import { ActionButton } from "@/components/action-button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useQuizDetail } from "@/lib/hooks/use-quizzes";
 import { getLanguageLabel } from "@/lib/languages";
+import { quizQuestionOptions } from "@/lib/quiz-types";
 
 export default function QuizDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuizDetail(id);
-  const [dialog, setDialog] = useState<"generate" | "remove" | null>(null);
+  const [dialog, setDialog] = useState<"generate" | "remove" | "verbForms" | null>(null);
   const [pending, setPending] = useState(false);
   const [generationFailed, setGenerationFailed] = useState(false);
+  const [cloneFailed, setCloneFailed] = useState(false);
   const dueCount = useMemo(() => {
     if (!data) return 0;
     const progress = new Map(data.progress.map((item) => [item.questionId, item]));
@@ -54,6 +56,20 @@ export default function QuizDetailPage() {
     } catch { setPending(false); setDialog(null); }
   }
 
+  async function createVerbFormsQuiz() {
+    if (pending) return;
+    setDialog(null);
+    setPending(true);
+    setCloneFailed(false);
+    try {
+      const res = await fetch(`/api/quizzes/${id}/verb-forms`, { method: "POST" });
+      if (!res.ok) throw new Error("Could not make the quiz");
+      const result = await res.json() as { quiz: { id: string } };
+      await queryClient.invalidateQueries({ queryKey: ["quizzes"] });
+      router.push(`/quizzes/${result.quiz.id}`);
+    } catch { setCloneFailed(true); setPending(false); }
+  }
+
   return <>
     <FloatingBackButton href="/quizzes" label="Back to quizzes" />
     <div className="w-full max-w-2xl mx-auto min-h-svh p-6 pt-22 pb-48">
@@ -67,7 +83,7 @@ export default function QuizDetailPage() {
           {data.questions.map((item, index) => <div key={item.id} className="rounded-2xl border border-border/50 bg-card p-5">
             <p className="text-xs text-muted-foreground">{index + 1}</p>
             <p className="mt-2 text-base">{item.prompt}</p>
-            <p className="mt-3 text-sm text-primary">{data.quiz.options[item.answerIndex]}</p>
+            <p className="mt-3 text-sm text-primary">{quizQuestionOptions(data.quiz, item)[item.answerIndex]}</p>
             <p className="mt-1 text-sm text-muted-foreground">{item.example}</p>
           </div>)}
         </div>
@@ -77,7 +93,13 @@ export default function QuizDetailPage() {
       <Link href={`/quizzes/${id}/practice`} aria-disabled={dueCount === 0} className={dueCount === 0 ? "pointer-events-none opacity-50" : ""}>
         <ActionButton disabled={dueCount === 0} icon={<ArrowRight className="h-5 w-5" />}>Start practicing {dueCount}</ActionButton>
       </Link>
-      <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        {data.quiz.mode === "tense_family" && <>
+          <button onClick={() => setDialog("verbForms")} disabled={pending} className="hover:text-foreground">
+            {cloneFailed ? "Try verb forms again" : "Practice verb forms"}
+          </button>
+          <span>·</span>
+        </>}
         <button onClick={() => setDialog("generate")} disabled={pending} className="hover:text-foreground">
           {pending ? "Generating…" : generationFailed ? "Try again" : "Generate more"}
         </button>
@@ -88,6 +110,9 @@ export default function QuizDetailPage() {
     <ConfirmDialog open={dialog === "generate"} title="Add more questions?"
       description="Add fresh questions using this quiz’s goal, languages and answer choices."
       confirmLabel="Generate more" onCancel={() => setDialog(null)} onConfirm={() => void generateMore()} />
+    <ConfirmDialog open={dialog === "verbForms"} title="Practice the verb forms?"
+      description="Make a new quiz from these situations. Choose the English verb form in each question."
+      confirmLabel="Create quiz" onCancel={() => setDialog(null)} onConfirm={() => void createVerbFormsQuiz()} />
     <ConfirmDialog open={dialog === "remove"} title="Remove this quiz?"
       description="This quiz will disappear from your list, including its practice history."
       confirmLabel="Remove quiz" destructive pending={pending}

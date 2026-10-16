@@ -13,7 +13,7 @@ import { getQuizAudioUrl } from "@/lib/audio-cache";
 import { voiceVolume } from "@/lib/voice-volume";
 import { SessionEngine, type SessionSentence } from "@/lib/session-engine";
 import { weightedShuffle } from "@/lib/spaced-repetition";
-import type { QuizDetail } from "@/lib/quiz-types";
+import { quizQuestionOptions, type QuizDetail } from "@/lib/quiz-types";
 
 type AudioState = "loading" | "playing" | "ready";
 
@@ -41,6 +41,7 @@ export default function QuizPracticePage() {
 
   const questions = useMemo(() => new Map(data?.questions.map((item) => [item.id, item]) ?? []), [data?.questions]);
   const question = current ? questions.get(current.id) : undefined;
+  const answerOptions = question && data ? quizQuestionOptions(data.quiz, question) : [];
   const correct = question && selectedIndex !== null ? selectedIndex === question.answerIndex : false;
 
   function queueNextAudio(active: SessionSentence | null) {
@@ -58,7 +59,7 @@ export default function QuizPracticePage() {
     const due = dueQuestions(data);
     const engine = engineRef.current;
     engine.init(due.map((item) => ({ id: item.question.id, sourceText: item.question.prompt,
-      targetText: data.quiz.options[item.question.answerIndex], voiceId: data.quiz.voiceId,
+      targetText: quizQuestionOptions(data.quiz, item.question)[item.question.answerIndex], voiceId: data.quiz.voiceId,
       topicTitle: data.quiz.title, progress: item.progress })));
     setInitialCount(engine.initialCount);
     setRemaining(engine.remaining);
@@ -199,7 +200,7 @@ export default function QuizPracticePage() {
       </button>
     </div>
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {data.quiz.options.map((option, index) => {
+      {answerOptions.map((option, index) => {
         const markedCorrect = selectedIndex !== null && index === question.answerIndex;
         const markedWrong = selectedIndex === index && !correct;
         return <button key={index} type="button" onClick={() => void submit(index)}
@@ -213,7 +214,7 @@ export default function QuizPracticePage() {
       })}
     </div>
     {selectedIndex !== null && !correct && <div className="mt-6 space-y-2" role="status">
-      <p className="text-sm">{data.quiz.options[question.answerIndex]}</p>
+      <p className="text-sm">{answerOptions[question.answerIndex]}</p>
       <p className="text-sm text-muted-foreground">{question.example}</p>
       <p className="text-sm text-muted-foreground">{question.explanation}</p>
     </div>}

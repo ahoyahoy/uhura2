@@ -19,14 +19,17 @@ export function parseQuizPlan(input: Record<string, unknown>): (QuizPlan & { cla
   const voiceId = input.voiceId;
   const classId = input.classId;
   const submittedOptions = Array.isArray(input.options) ? input.options.map((value) => typeof value === "string" ? value.trim() : "") : [];
-  const options = mode === "tense_family" && typeof answerLanguage === "string" ? tenseOptions(answerLanguage) : submittedOptions;
+  const options = mode === "tense_family" && typeof answerLanguage === "string" ? tenseOptions(answerLanguage)
+    : mode === "tense_form" ? [] : submittedOptions;
   if (title.length < 3 || title.length > 80 || description.length < 10 || description.length > 600 ||
     !QUIZ_MODES.includes(mode as QuizPlan["mode"]) || !LEVELS.includes(String(level)) ||
     typeof questionLanguage !== "string" || !languages.has(questionLanguage) ||
     typeof answerLanguage !== "string" || !languages.has(answerLanguage) ||
+    (mode === "tense_form" && answerLanguage !== "en") ||
     typeof classId !== "string" || !UUID.test(classId) ||
     typeof voiceId !== "string" || !isAllowedVoice(voiceId) || !options ||
-    options.length < 2 || options.length > 6 || options.some((value) => value.length < 1 || value.length > 80) ||
+    (mode !== "tense_form" && options.length < 2) || options.length > 6 ||
+    options.some((value) => value.length < 1 || value.length > 80) ||
     new Set(options.map((value) => value.toLocaleLowerCase())).size !== options.length) return null;
   return { title, description, mode: mode as QuizPlan["mode"], level: String(level), questionLanguage, answerLanguage, options, voiceId, classId };
 }

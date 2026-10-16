@@ -15,10 +15,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   if (!UUID.test(id) || typeof body.questionId !== "string" || !UUID.test(body.questionId) ||
     !Number.isInteger(body.selectedIndex)) return NextResponse.json({ error: "Invalid answer" }, { status: 400 });
-  const [row] = await db.select({ question: quizQuestion, options: quiz.options })
+  const [row] = await db.select({ question: quizQuestion, quizOptions: quiz.options })
     .from(quizQuestion).innerJoin(quiz, eq(quiz.id, quizQuestion.quizId))
     .where(and(eq(quiz.id, id), eq(quizQuestion.id, body.questionId), eq(quiz.userId, session.user.id), isNull(quiz.deletedAt)));
-  if (!row || (body.selectedIndex as number) < 0 || (body.selectedIndex as number) >= row.options.length) {
+  const options = row?.question.options.length ? row.question.options : row?.quizOptions;
+  if (!row || !options || (body.selectedIndex as number) < 0 || (body.selectedIndex as number) >= options.length) {
     return NextResponse.json({ error: "Question not found" }, { status: 404 });
   }
   const correct = body.selectedIndex === row.question.answerIndex;

@@ -3,11 +3,12 @@ export type QuizRecord = {
   classId: string;
   title: string;
   description: string;
-  mode: "tense_family" | "custom";
+  mode: "tense_family" | "tense_form" | "custom";
   level: string;
   questionLanguage: string;
   answerLanguage: string;
   options: string[];
+  sourceQuizId: string | null;
   voiceId: string;
   createdAt: string;
   questionCount?: number;
@@ -19,6 +20,8 @@ export type QuizQuestionRecord = {
   quizId: string;
   prompt: string;
   answerIndex: number;
+  options: string[];
+  familyIndex: number | null;
   example: string;
   explanation: string;
   position: number;
@@ -38,3 +41,7 @@ export type QuizDetail = {
   questions: QuizQuestionRecord[];
   progress: QuizProgressRecord[];
 };
+
+export function quizQuestionOptions(quiz: QuizRecord, question: QuizQuestionRecord): string[] {
+  return question.options.length ? question.options : quiz.options;
+}

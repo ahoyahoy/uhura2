@@ -64,6 +64,13 @@
       "when": 1791865403393,
       "tag": "0008_illegal_doctor_faustus",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792109477672,
+      "tag": "0009_giant_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

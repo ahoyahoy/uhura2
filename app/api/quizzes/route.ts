@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { languageClass, quiz, quizQuestion, quizProgress } from "@/db/schema";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { generateQuizBatch } from "@/lib/quiz-generation";
+import { generateTenseFormBatch } from "@/lib/quiz-tense-form";
 import { parseQuizPlan, reserveQuizBatch, UUID } from "@/lib/quiz-server";
 import { generationError } from "@/lib/generation-error";
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (!await reserveQuizBatch(session.user.id)) return NextResponse.json({ error: "Today's quiz limit has been reached" }, { status: 429 });
 
   let generated;
-  try { generated = await generateQuizBatch(plan, []); }
+  try { generated = plan.mode === "tense_form" ? await generateTenseFormBatch(plan, []) : await generateQuizBatch(plan, []); }
   catch (error) {
     const failure = generationError(error);
     console.error("Quiz generation failed", failure.code, error instanceof Error ? error.message.slice(0, 300) : "provider error");
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
   try {
     const questions = await db.insert(quizQuestion).values(generated.map((item, position) => ({
       quizId: created.id, position, prompt: item.prompt, answerIndex: item.answerIndex,
+      options: item.options ?? [], familyIndex: item.familyIndex ?? null,
       example: item.example, explanation: item.explanation,
     }))).returning();
     return NextResponse.json({ quiz: created, questions }, { status: 201 });

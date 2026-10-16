@@ -16,6 +16,7 @@ import { DEFAULT_VOICE_ID } from "@/lib/voices";
 import { tenseOptions, type QuizMode } from "@/lib/quiz-config";
 
 const DEFAULT_DESCRIPTION = "Recognize which of the four English tense families best expresses the situation. Use short natural examples with clear time or result clues, varied everyday contexts, and all four answer types.";
+const FORM_DESCRIPTION = "Choose the natural English verb form for each situation. Compare four forms of the same subject and verb; learn how time, duration and result determine the answer.";
 
 export default function NewQuizPage() {
   return <Suspense fallback={<div className="flex flex-1 items-center justify-center"><Loader2 className="animate-spin" /></div>}><NewQuizContent /></Suspense>;
@@ -41,9 +42,11 @@ function NewQuizContent() {
   const [voiceId, setVoiceId] = useState<string>(DEFAULT_VOICE_ID);
   const [isCreating, setIsCreating] = useState(false);
   const [failed, setFailed] = useState(false);
-  const options = mode === "tense_family" ? tenseOptions(answerLanguage) ?? [] : customOptions.map((value) => value.trim()).filter(Boolean);
+  const options = mode === "tense_family" ? tenseOptions(answerLanguage) ?? []
+    : mode === "tense_form" ? [] : customOptions.map((value) => value.trim()).filter(Boolean);
   const valid = Boolean(course && title.trim().length >= 3 && description.trim().length >= 10 &&
-    options.length >= 2 && new Set(options.map((value) => value.toLowerCase())).size === options.length &&
+    (mode === "tense_form" || options.length >= 2) &&
+    new Set(options.map((value) => value.toLowerCase())).size === options.length &&
     (mode !== "custom" || customOptions.every((value) => value.trim().length > 0)));
 
   async function createQuiz() {
@@ -78,6 +81,8 @@ function NewQuizContent() {
         <div className="flex flex-wrap gap-2">
           <button type="button" aria-pressed={mode === "tense_family"} onClick={() => { setMode("tense_family"); setTitle("Recognize English tense families"); setDescription(DEFAULT_DESCRIPTION); if (!tenseOptions(answerLanguage)) setAnswerLanguage("en"); }}
             className={`rounded-full px-4 py-2 text-sm ${mode === "tense_family" ? "bg-primary text-primary-foreground" : "bg-card"}`}>English tense families</button>
+          <button type="button" aria-pressed={mode === "tense_form"} onClick={() => { setMode("tense_form"); setTitle("Choose the English verb form"); setDescription(FORM_DESCRIPTION); setAnswerLanguage("en"); }}
+            className={`rounded-full px-4 py-2 text-sm ${mode === "tense_form" ? "bg-primary text-primary-foreground" : "bg-card"}`}>English verb forms</button>
           <button type="button" aria-pressed={mode === "custom"} onClick={() => { setMode("custom"); setTitle(""); setDescription(""); }}
             className={`rounded-full px-4 py-2 text-sm ${mode === "custom" ? "bg-primary text-primary-foreground" : "bg-card"}`}>Custom answers</button>
         </div>
@@ -98,16 +103,19 @@ function NewQuizContent() {
           </select>
         </label>
         <label className="text-xs text-muted-foreground">Answer language
-          <select value={answerLanguage} onChange={(event) => setAnswerLanguage(event.target.value)}
+          <select value={answerLanguage} disabled={mode === "tense_form"} onChange={(event) => setAnswerLanguage(event.target.value)}
             className="mt-2 block w-full rounded-xl border border-border/50 bg-card px-3 py-3 text-sm text-foreground">
-            {(mode === "tense_family" ? LANGUAGES.filter((language) => tenseOptions(language.code)) : LANGUAGES)
+            {(mode === "tense_family" ? LANGUAGES.filter((language) => tenseOptions(language.code))
+              : mode === "tense_form" ? LANGUAGES.filter((language) => language.code === "en") : LANGUAGES)
               .map((language) => <option key={language.code} value={language.code}>{language.label}</option>)}
           </select>
         </label>
       </div>
       <div>
         <p className="mb-2 text-xs text-muted-foreground">Answer choices · shown while the question is read</p>
-        {mode === "tense_family" ? <div className="grid grid-cols-2 gap-2">
+        {mode === "tense_form" ? <p className="rounded-xl border border-border/50 bg-card px-4 py-3 text-sm text-muted-foreground">
+          Each question gets four forms of the same verb, such as “I work / I’m working / I’ve worked / I’ve been working”.
+        </p> : mode === "tense_family" ? <div className="grid grid-cols-2 gap-2">
           {options.map((value) => <div key={value} className="rounded-xl border border-border/50 bg-card px-4 py-3 text-sm">{value}</div>)}
         </div> : <div className="space-y-2">
           {customOptions.map((value, index) => <input key={index} aria-label={`Answer choice ${index + 1}`} maxLength={80}

@@ -1,6 +1,6 @@
 export const TENSE_FAMILY_OPTIONS = ["Simple", "Continuous", "Perfect Simple", "Perfect Continuous"] as const;
 export const TENSE_FAMILY_OPTIONS_CS = ["Prostý", "Průběhový", "Perfektní prostý", "Perfektní průběhový"] as const;
-export const QUIZ_MODES = ["tense_family", "custom"] as const;
+export const QUIZ_MODES = ["tense_family", "tense_form", "custom"] as const;
 export type QuizMode = (typeof QUIZ_MODES)[number];
 export const MAX_QUIZ_QUESTIONS = 200;
 export const QUIZ_BATCH_SIZE = 10;
@@ -26,4 +26,7 @@ export type QuizItem = {
   answerIndex: number;
   example: string;
   explanation: string;
+  options?: string[];
+  familyIndex?: number | null;
 };
+export type QuizSource = QuizItem & { position: number };

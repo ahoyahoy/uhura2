@@ -5,7 +5,8 @@ import { db } from "@/db";
 import { quiz, quizQuestion, quizGeneration } from "@/db/schema";
 import { and, eq, isNull, lt, ne, or } from "drizzle-orm";
 import { generateQuizBatch } from "@/lib/quiz-generation";
-import { MAX_QUIZ_QUESTIONS, type QuizMode } from "@/lib/quiz-config";
+import { generateTenseFormBatch } from "@/lib/quiz-tense-form";
+import { MAX_QUIZ_QUESTIONS, QUIZ_BATCH_SIZE, type QuizMode } from "@/lib/quiz-config";
 import { reserveQuizBatch, UUID } from "@/lib/quiz-server";
 import { generationError } from "@/lib/generation-error";
 
@@ -30,17 +31,29 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const existing = await db.select().from(quizQuestion).where(eq(quizQuestion.quizId, id)).orderBy(quizQuestion.position);
     if (existing.length >= MAX_QUIZ_QUESTIONS) return NextResponse.json({ error: "This quiz is full" }, { status: 409 });
     if (!await reserveQuizBatch(session.user.id)) return NextResponse.json({ error: "Today's quiz limit has been reached" }, { status: 429 });
-    const generated = await generateQuizBatch({
+    const plan = {
       title: entry.title, description: entry.description, mode: entry.mode as QuizMode,
       level: entry.level, questionLanguage: entry.questionLanguage,
       answerLanguage: entry.answerLanguage, options: entry.options,
-    }, existing.map(({ prompt, answerIndex, example, explanation }) => ({ prompt, answerIndex, example, explanation })));
+    };
+    const previous = existing.map(({ prompt, answerIndex, options, familyIndex, example, explanation }) =>
+      ({ prompt, answerIndex, options, familyIndex, example, explanation }));
+    const sourceQuestions = entry.mode === "tense_form" && entry.sourceQuizId
+      ? await db.select().from(quizQuestion).where(eq(quizQuestion.quizId, entry.sourceQuizId)).orderBy(quizQuestion.position)
+      : [];
+    const sources = sourceQuestions.slice(existing.length, existing.length + QUIZ_BATCH_SIZE)
+      .map(({ position, prompt, answerIndex, example, explanation }) =>
+        ({ position, prompt, answerIndex, example, explanation }));
+    const generated = entry.mode === "tense_form"
+      ? await generateTenseFormBatch(plan, previous, sources)
+      : await generateQuizBatch(plan, previous);
     const [live] = await db.select({ id: quiz.id }).from(quiz)
       .where(and(eq(quiz.id, id), eq(quiz.userId, session.user.id), isNull(quiz.deletedAt)));
     if (!live) return NextResponse.json({ error: "Quiz was removed" }, { status: 409 });
     const questions = await db.insert(quizQuestion).values(generated.slice(0, MAX_QUIZ_QUESTIONS - existing.length).map((item, index) => ({
       quizId: id, position: (existing.at(-1)?.position ?? -1) + index + 1,
       prompt: item.prompt, answerIndex: item.answerIndex,
+      options: item.options ?? [], familyIndex: item.familyIndex ?? null,
       example: item.example, explanation: item.explanation,
     }))).returning();
     return NextResponse.json({ questions });
