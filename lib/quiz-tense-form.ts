@@ -76,7 +76,10 @@ function validate(value: unknown, existing: QuizItem[], sources: QuizSource[]): 
       answerIndex: answerIndex as number, familyIndex: familyIndex as number, example, explanation });
   }
   if (sources.length) {
-    if (result.length !== sources.length) throw new Error("Verb-form conversion missed a source question");
+    if (result.length !== sources.length) {
+      const missing = sources.filter((source) => !seenSources.has(source.position)).map((source) => source.position);
+      throw new Error(`Verb-form conversion missed source positions: ${missing.join(", ")}`);
+    }
     result.sort((a, b) => a.sourcePosition - b.sourcePosition);
   } else {
     if (result.length < 6 || new Set(result.map((item) => item.familyIndex)).size !== 4) {
@@ -104,7 +107,7 @@ async function complete(system: string, payload: unknown, maxCompletionTokens: n
   return (JSON.parse(choice.message.content) as { questions?: unknown }).questions;
 }
 
-export async function generateTenseFormBatch(plan: QuizPlan, existing: QuizItem[], sources: QuizSource[] = []): Promise<QuizItem[]> {
+async function generatePart(plan: QuizPlan, existing: QuizItem[], sources: QuizSource[]): Promise<QuizItem[]> {
   const questionLanguage = getLanguageLabel(plan.questionLanguage);
   const sourcePayload = sources.map((source) => ({ sourcePosition: source.position, prompt: source.prompt,
     intendedFamily: TENSE_FAMILY_OPTIONS[source.answerIndex], englishExample: source.example }));
@@ -112,8 +115,27 @@ export async function generateTenseFormBatch(plan: QuizPlan, existing: QuizItem[
   const payload = { plan: { title: plan.title, description: plan.description, level: plan.level, questionLanguage: plan.questionLanguage },
     sources: sourcePayload, existingQuestions: existing.map(({ prompt, options, familyIndex }) => ({ prompt, options, familyIndex })) };
   const draft = await complete(system, payload, 5200);
-  const candidates = validate(draft, existing, sources);
+  let candidates: QuizItem[];
+  try {
+    candidates = validate(draft, existing, sources);
+  } catch (error) {
+    throw new Error(`Verb-form draft invalid: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
   const review = await complete(`Independently review these English verb-form multiple-choice questions for a ${questionLanguage}-speaking learner. For each sourcePosition, keep its original intended family. Check that all four options have the SAME subject and lexical verb, are grammatical distinct Simple/Continuous/Perfect Simple/Perfect Continuous forms in ONE present or past frame, and the one correct form is the most natural for the Czech clue. Use uncontracted affirmative options; the correct option must appear verbatim in the full English example. Repair any bad conjugation, ambiguity, unnatural Czech, explanation or repetitive pattern. Do not use tense names as answer choices. Return all ${candidates.length} questions with the same sourcePosition values and the exact JSON fields, including optionFamilies consistent with the shuffled choices.`,
     { plan: payload.plan, sources: sourcePayload, candidates }, 4800);
-  return validate(review, existing, sources);
+  try {
+    return validate(review, existing, sources);
+  } catch (error) {
+    throw new Error(`Verb-form review invalid: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
+}
+
+export async function generateTenseFormBatch(plan: QuizPlan, existing: QuizItem[], sources: QuizSource[] = []): Promise<QuizItem[]> {
+  if (!sources.length) return generatePart(plan, existing, []);
+  const generated: QuizItem[] = [];
+  for (let index = 0; index < sources.length; index += 5) {
+    const part = await generatePart(plan, [...existing, ...generated], sources.slice(index, index + 5));
+    generated.push(...part);
+  }
+  return generated;
 }
