@@ -2,6 +2,7 @@ import { openai } from "@/lib/openai";
 import { getLanguageLabel } from "@/lib/languages";
 import { getLevelDescription } from "@/lib/level-descriptions";
 import { QUIZ_BATCH_SIZE, TENSE_FAMILY_OPTIONS, type QuizItem, type QuizPlan, type QuizSource } from "@/lib/quiz-config";
+import { compactVerbForms } from "@/lib/quiz-verb-forms";
 
 const MODEL = "gpt-6-luna";
 const MAX_REQUEST_BYTES = 28_000;
@@ -77,7 +78,8 @@ function validate(value: unknown, existing: QuizItem[], sources: QuizSource[]): 
     const sourcePosition = item.sourcePosition;
     const source = sourceByPosition.get(sourcePosition as number);
     const prompt = sources.length ? source?.prompt ?? "" : typeof item.prompt === "string" ? item.prompt.trim() : "";
-    const options = Array.isArray(item.options) ? item.options.map((option) => typeof option === "string" ? option.trim() : "") : [];
+    const rawOptions = Array.isArray(item.options) ? item.options.map((option) => typeof option === "string" ? option.trim() : "") : [];
+    const options = compactVerbForms(rawOptions);
     const optionFamilies = item.optionFamilies;
     const example = typeof item.example === "string" ? item.example.trim() : "";
     const explanation = typeof item.explanation === "string" ? item.explanation.trim() : "";

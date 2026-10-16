@@ -1,3 +1,5 @@
+import { compactVerbForms } from "@/lib/quiz-verb-forms";
+
 export type QuizRecord = {
   id: string;
   classId: string;
@@ -43,5 +45,6 @@ export type QuizDetail = {
 };
 
 export function quizQuestionOptions(quiz: QuizRecord, question: QuizQuestionRecord): string[] {
-  return question.options.length ? question.options : quiz.options;
+  const options = question.options.length ? question.options : quiz.options;
+  return quiz.mode === "tense_form" ? compactVerbForms(options) : options;
 }
