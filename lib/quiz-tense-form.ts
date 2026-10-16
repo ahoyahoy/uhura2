@@ -52,6 +52,19 @@ function appearsInExample(example: string, option: string) {
   return false;
 }
 
+function optionFrame(option: string, family: number): "Present" | "Past" | null {
+  const words = normalize(option).split(" ");
+  if (family === 1) {
+    if (words.some((word) => ["am", "is", "are"].includes(word))) return "Present";
+    if (words.some((word) => ["was", "were"].includes(word))) return "Past";
+  }
+  if (family === 2 || family === 3) {
+    if (words.some((word) => ["have", "has"].includes(word))) return "Present";
+    if (words.includes("had")) return "Past";
+  }
+  return null;
+}
+
 function validate(value: unknown, existing: QuizItem[], sources: QuizSource[]): QuizItem[] {
   if (!Array.isArray(value)) throw new Error("Invalid verb-form questions");
   const sourceByPosition = new Map(sources.map((item) => [item.position, item]));
@@ -70,6 +83,9 @@ function validate(value: unknown, existing: QuizItem[], sources: QuizSource[]): 
     const explanation = typeof item.explanation === "string" ? item.explanation.trim() : "";
     const answerIndex = item.answerIndex;
     const familyIndex = item.familyIndex;
+    const frames = Array.isArray(optionFamilies) && optionFamilies.length === 4
+      ? [1, 2, 3].map((family) => optionFrame(options[optionFamilies.indexOf(family)] ?? "", family))
+      : [];
     if (!Number.isInteger(sourcePosition) || !Number.isInteger(answerIndex) || !Number.isInteger(familyIndex) ||
       (answerIndex as number) < 0 || (answerIndex as number) > 3 || (familyIndex as number) < 0 || (familyIndex as number) > 3 ||
       prompt.length < 5 || prompt.length > 240 || example.length < 5 || example.length > 280 ||
@@ -80,8 +96,9 @@ function validate(value: unknown, existing: QuizItem[], sources: QuizSource[]): 
       optionFamilies[answerIndex as number] !== familyIndex ||
       options.some((option) => option.length < 2 || option.length > 90) ||
       new Set(options.map(normalize)).size !== 4 ||
+      frames.length !== 3 || frames.some((frame) => !frame || frame !== frames[0]) ||
       !appearsInExample(example, options[answerIndex as number]) ||
-      !new RegExp(`^(Present|Past) ${TENSE_FAMILY_OPTIONS[familyIndex as number]}:`, "i").test(explanation)) continue;
+      !explanation.toLowerCase().startsWith(`${frames[0]} ${TENSE_FAMILY_OPTIONS[familyIndex as number]}:`.toLowerCase())) continue;
     if (sources.length) {
       if (!source || source.answerIndex !== familyIndex || seenSources.has(sourcePosition as number)) continue;
       seenSources.add(sourcePosition as number);
@@ -140,7 +157,16 @@ async function generatePart(plan: QuizPlan, existing: QuizItem[], sources: QuizS
   try {
     return validate(review, existing, sources);
   } catch (error) {
-    throw new Error(`Verb-form review invalid: ${error instanceof Error ? error.message : "unknown error"}`);
+    const repairScope = sources.length
+      ? "Return exactly one question for every sourcePosition in sources with the same natural source prompt and intended family."
+      : `Return up to ${QUIZ_BATCH_SIZE} fresh questions, including all four families, with sourcePosition -1.`;
+    const repair = await complete(`Repair these verb-form quiz questions. The prior review failed validation: ${error instanceof Error ? error.message : "unknown error"}. ${repairScope} The options must be the SAME subject and lexical verb in four correctly labelled families, ALL IN ONE present OR past time frame. For example, do not mix "have tried" with "were trying", "tried", and "had been trying"; use "had tried" there. optionFamilies must accurately describe the forms. The explanation MUST start with the exact full English tense name and colon, such as "Past Perfect Simple:". The correct option's words must appear in order in example. Return the full JSON schema.`,
+      { plan: payload.plan, sources: sourcePayload, candidates: Array.isArray(review) ? review : [] }, 4800);
+    try {
+      return validate(repair, existing, sources);
+    } catch (repairError) {
+      throw new Error(`Verb-form repair invalid: ${repairError instanceof Error ? repairError.message : "unknown error"}`);
+    }
   }
 }
 
