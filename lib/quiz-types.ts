@@ -46,5 +46,5 @@ export type QuizDetail = {
 
 export function quizQuestionOptions(quiz: QuizRecord, question: QuizQuestionRecord): string[] {
   const options = question.options.length ? question.options : quiz.options;
-  return quiz.mode === "tense_form" ? compactVerbForms(options) : options;
+  return quiz.mode === "tense_form" ? compactVerbForms(options, question.example) : options;
 }

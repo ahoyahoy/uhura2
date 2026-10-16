@@ -79,7 +79,7 @@ function validate(value: unknown, existing: QuizItem[], sources: QuizSource[]): 
     const source = sourceByPosition.get(sourcePosition as number);
     const prompt = sources.length ? source?.prompt ?? "" : typeof item.prompt === "string" ? item.prompt.trim() : "";
     const rawOptions = Array.isArray(item.options) ? item.options.map((option) => typeof option === "string" ? option.trim() : "") : [];
-    const options = compactVerbForms(rawOptions);
+    const options = compactVerbForms(rawOptions, typeof item.example === "string" ? item.example : "");
     const optionFamilies = item.optionFamilies;
     const example = typeof item.example === "string" ? item.example.trim() : "";
     const explanation = typeof item.explanation === "string" ? item.explanation.trim() : "";
